@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Room3D — how it works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f7f7f4;
+    --sheet: #ffffff;
+    --ink: #1e2124;
+    --steel: #5f656c;
+    --rule: #d3d6d1;
+    --faint: #ecede9;
+    --tape: #f5c400;
+    --mark: #d2402e;
+    --blue: #2c6cb0;
+    --green: #3f8a5a;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 16px/1.6 "Public Sans", system-ui, sans-serif;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 48px 24px 96px; }
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 36px; }
+  .kicker { font: 500 12px/1 "IBM Plex Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--steel); }
+  h1 { font: 800 44px/1.05 Archivo, sans-serif; margin: 10px 0 12px; letter-spacing: -.01em; }
+  h1 .hl { background: linear-gradient(transparent 62%, var(--tape) 62%); }
+  h2 { font: 700 26px/1.2 Archivo, sans-serif; margin: 56px 0 6px; }
+  h2 .n { font: 500 13px "IBM Plex Mono", monospace; color: var(--steel); margin-right: 10px; vertical-align: 4px; }
+  h3 { font: 700 17px/1.3 Archivo, sans-serif; margin: 0 0 6px; }
+  p { margin: 0 0 12px; }
+  .lede { font-size: 18px; max-width: 62ch; color: #33373b; }
+  .sub { color: var(--steel); max-width: 70ch; margin-bottom: 18px; }
+  code, .mono { font: 13.5px "IBM Plex Mono", monospace; }
+  code { background: var(--faint); padding: 1px 5px; border-radius: 3px; }
+
+  .figure { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 18px; margin: 18px 0 8px; overflow-x: auto; }
+  .figure svg { display: block; width: 100%; height: auto; min-width: 760px; }
+  .caption { font-size: 13px; color: var(--steel); margin-top: 6px; }
+
+  .simple { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--rule); background: var(--sheet); border-radius: 6px; overflow: hidden; }
+  .simple div { padding: 16px 18px; border-right: 1px solid var(--rule); }
+  .simple div:last-child { border-right: 0; }
+  .simple b { display: block; font: 700 15px Archivo, sans-serif; margin: 4px 0 4px; }
+  .simple .step { font: 500 12px "IBM Plex Mono", monospace; color: var(--steel); }
+  .simple span:last-child { font-size: 14px; color: #3a3e42; }
+
+  .stages { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  .card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; }
+  .card .top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .card .tag { font: 500 12px "IBM Plex Mono", monospace; color: var(--steel); white-space: nowrap; }
+  .card p { font-size: 14.5px; margin: 0 0 8px; }
+  .card .tech { font: 12.5px/1.5 "IBM Plex Mono", monospace; color: var(--steel); border-top: 1px dashed var(--rule); padding-top: 8px; }
+  .card svg { width: 100%; height: auto; display: block; margin: 6px 0 10px; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--sheet); border: 1px solid var(--rule); font-size: 14.5px; margin-top: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font: 500 12px "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .05em; color: var(--steel); background: var(--faint); }
+  td.mono { white-space: nowrap; }
+
+  ul.limits { padding-left: 18px; }
+  ul.limits li { margin-bottom: 6px; }
+  footer { margin-top: 64px; border-top: 1px solid var(--rule); padding-top: 14px; font-size: 13px; color: var(--steel); }
+
+  @media (max-width: 760px) {
+    h1 { font-size: 32px; }
+    .simple { grid-template-columns: 1fr 1fr; }
+    .simple div:nth-child(2) { border-right: 0; }
+    .simple div:nth-child(-n+2) { border-bottom: 1px solid var(--rule); }
+    .stages { grid-template-columns: 1fr; }
+  }
+
+  /* shared svg styles */
+  svg text { font-family: "Public Sans", sans-serif; fill: var(--ink); }
+  svg .t-title { font: 700 14px Archivo, sans-serif; }
+  svg .t-body { font-size: 12px; fill: #3a3e42; }
+  svg .t-mono { font: 11px "IBM Plex Mono", monospace; fill: var(--steel); }
+  svg .t-lbl { font: 500 11px "IBM Plex Mono", monospace; fill: var(--steel); }
+  svg .box { fill: #fff; stroke: var(--ink); stroke-width: 1.5; }
+  svg .box-soft { fill: var(--faint); stroke: var(--rule); stroke-width: 1; }
+  svg .zone { fill: #fbfbf9; stroke: var(--steel); stroke-width: 1.2; stroke-dasharray: 6 4; }
+  svg .arrow { stroke: var(--ink); stroke-width: 1.5; fill: none; marker-end: url(#ah); }
+  svg .arrow-blue { stroke: var(--blue); stroke-width: 1.6; fill: none; marker-end: url(#ahb); }
+  svg .arrow-red { stroke: var(--mark); stroke-width: 1.6; fill: none; marker-end: url(#ahr); stroke-dasharray: 5 3; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Room3D · system notes · Oct 2026</div>
+  <h1>How a phone video becomes a <span class="hl">3D room</span></h1>
+  <p class="lede">You upload an .mp4. The server picks 120 sharp frames, works out where the camera was, estimates depth, and fuses everything into a point cloud. From that it finds the floor, walls, ceiling and furniture boxes. The browser draws the result with Three.js. It all runs on CPU and takes about a minute per video.</p>
+</header>
+
+<!-- ============================================================ simple -->
+<h2><span class="n">01</span>The short version</h2>
+<p class="sub">Four steps, no jargon.</p>
+<div class="simple">
+  <div><span class="step">STEP 1</span><b>Pick photos</b><span>Pull 120 frames from the video, keeping the least blurry ones.</span></div>
+  <div><span class="step">STEP 2</span><b>Find the camera</b><span>Match features between photos to work out where the phone was for each one.</span></div>
+  <div><span class="step">STEP 3</span><b>Measure distance</b><span>An AI model guesses how far away every pixel is. Combined with the camera path, this gives 3D dots.</span></div>
+  <div><span class="step">STEP 4</span><b>Understand the room</b><span>Tall flat dot clusters become walls. An object detector labels furniture, which becomes boxes.</span></div>
+</div>
+
+<!-- ============================================================ system -->
+<h2><span class="n">02</span>System diagram</h2>
+<p class="sub">Where each piece runs, from your phone to the VPS and back.</p>
+<div class="figure">
+<svg viewBox="0 0 1000 470" role="img" aria-label="System architecture diagram">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1e2124"/></marker>
+    <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2c6cb0"/></marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d2402e"/></marker>
+  </defs>
+
+  <!-- browser -->
+  <rect class="box" x="20" y="60" width="170" height="300" rx="6"/>
+  <text class="t-title" x="36" y="86">Browser</text>
+  <text class="t-mono" x="36" y="104">phone or laptop</text>
+  <rect class="box-soft" x="34" y="120" width="142" height="62" rx="4"/>
+  <text class="t-body" x="44" y="142">Uploader</text>
+  <text class="t-mono" x="44" y="160">8 MB chunks</text>
+  <text class="t-mono" x="44" y="174">resumes after refresh</text>
+  <rect class="box-soft" x="34" y="194" width="142" height="48" rx="4"/>
+  <text class="t-body" x="44" y="215">Progress poller</text>
+  <text class="t-mono" x="44" y="232">polls /api/jobs, 2 s</text>
+  <rect class="box-soft" x="34" y="254" width="142" height="92" rx="4"/>
+  <text class="t-body" x="44" y="275">3D viewer</text>
+  <text class="t-mono" x="44" y="292">Three.js 0.170</text>
+  <text class="t-mono" x="44" y="306">points + walls</text>
+  <text class="t-mono" x="44" y="320">+ boxes + ceiling</text>
+  <text class="t-mono" x="44" y="334">dbl-click = pivot</text>
+
+  <!-- cloudflare -->
+  <rect class="box" x="250" y="150" width="140" height="110" rx="6"/>
+  <text class="t-title" x="266" y="176">Cloudflare</text>
+  <text class="t-mono" x="266" y="194">trycloudflare.com</text>
+  <text class="t-mono" x="266" y="214">HTTPS edge</text>
+  <text class="t-mono" x="266" y="230">100 MB body limit</text>
+  <text class="t-mono" x="266" y="246">(hence chunks)</text>
+
+  <!-- VPS zone -->
+  <rect class="zone" x="440" y="20" width="540" height="430" rx="8"/>
+  <text class="t-lbl" x="456" y="42">VPS · vps-8core · Amazon Linux · 8 CPU · no GPU</text>
+
+  <!-- cloudflared -->
+  <rect class="box" x="460" y="160" width="120" height="90" rx="6"/>
+  <text class="t-title" x="474" y="186">cloudflared</text>
+  <text class="t-mono" x="474" y="204">protocol: http2</text>
+  <text class="t-mono" x="474" y="220">systemd:</text>
+  <text class="t-mono" x="474" y="234">room3d-tunnel</text>
+
+  <!-- fastapi -->
+  <rect class="box" x="620" y="60" width="170" height="190" rx="6"/>
+  <text class="t-title" x="636" y="86">FastAPI server</text>
+  <text class="t-mono" x="636" y="104">server.py · 127.0.0.1:8000</text>
+  <text class="t-mono" x="636" y="126">POST /api/uploads</text>
+  <text class="t-mono" x="636" y="142">PUT  /api/uploads/{id}</text>
+  <text class="t-mono" x="636" y="158">POST …/{id}/finish</text>
+  <text class="t-mono" x="636" y="174">GET  /api/jobs</text>
+  <text class="t-mono" x="636" y="190">GET  /results/{id}/…</text>
+  <text class="t-mono" x="636" y="206">GET  /  (web/index.html)</text>
+  <text class="t-mono" x="636" y="230">systemd: room3d</text>
+
+  <!-- worker -->
+  <rect class="box" x="820" y="60" width="145" height="190" rx="6"/>
+  <text class="t-title" x="836" y="86">Worker thread</text>
+  <text class="t-mono" x="836" y="104">one job at a time</text>
+  <rect class="box-soft" x="834" y="118" width="117" height="118" rx="4"/>
+  <text class="t-body" x="844" y="138">pipeline.py</text>
+  <text class="t-mono" x="844" y="156">frames</text>
+  <text class="t-mono" x="844" y="170">poses</text>
+  <text class="t-mono" x="844" y="184">depth</text>
+  <text class="t-mono" x="844" y="198">fusion</text>
+  <text class="t-mono" x="844" y="212">walls</text>
+  <text class="t-mono" x="844" y="226">objects</text>
+
+  <!-- disk -->
+  <rect class="box" x="620" y="300" width="345" height="130" rx="6"/>
+  <text class="t-title" x="636" y="326">Disk · ~/apps/room3d</text>
+  <text class="t-mono" x="636" y="348">assets/.partial/  uploads in progress</text>
+  <text class="t-mono" x="636" y="366">assets/&lt;job&gt;.mp4  video, deleted when done</text>
+  <text class="t-mono" x="636" y="384">outputs/&lt;job&gt;/status.json  job state</text>
+  <text class="t-mono" x="636" y="402">outputs/&lt;job&gt;/scene.json, points.*</text>
+  <text class="t-mono" x="636" y="420">models/  depth + YOLOE weights</text>
+
+  <!-- arrows: upload path (blue) -->
+  <path class="arrow-blue" d="M190 150 C 220 150, 225 185, 248 190"/>
+  <text class="t-lbl" x="196" y="140" style="fill:#2c6cb0">upload</text>
+  <path class="arrow-blue" d="M390 195 L 458 195"/>
+  <path class="arrow-blue" d="M580 185 L 618 160"/>
+  <path class="arrow" d="M790 150 L 818 150"/>
+  <path class="arrow" d="M700 250 L 700 298"/>
+  <text class="t-lbl" x="706" y="280">write chunks</text>
+  <path class="arrow" d="M890 250 L 890 298"/>
+  <text class="t-lbl" x="896" y="280">results</text>
+
+  <!-- return path (red) -->
+  <path class="arrow-red" d="M618 215 L 582 230"/>
+  <path class="arrow-red" d="M458 232 L 392 232"/>
+  <path class="arrow-red" d="M248 240 C 225 250, 220 300, 192 300"/>
+  <text class="t-lbl" x="238" y="380" style="fill:#d2402e">results + progress</text>
+  <path d="M200 376 L 230 376" stroke="#d2402e" stroke-dasharray="5 3" stroke-width="1.6"/>
+  <text class="t-lbl" x="238" y="404" style="fill:#2c6cb0">video upload</text>
+  <path d="M200 400 L 230 400" stroke="#2c6cb0" stroke-width="1.6"/>
+</svg>
+</div>
+<p class="caption">Only the tunnel is public. FastAPI listens on localhost. Both services are systemd units with <code>Restart=always</code>, and the tunnel doesn't restart when the app does, so the URL stays the same.</p>
+
+<!-- ============================================================ upload -->
+<h2><span class="n">03</span>Upload protocol</h2>
+<p class="sub">Cloudflare rejects request bodies over 100 MB, so the file is sent in 8 MB pieces. If the connection drops, the browser asks the server how much it already has and carries on from there.</p>
+<div class="figure">
+<svg viewBox="0 0 1000 400" role="img" aria-label="Upload sequence diagram">
+  <defs>
+    <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1e2124"/></marker>
+    <marker id="ah2r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d2402e"/></marker>
+  </defs>
+  <rect class="box" x="80" y="14" width="160" height="36" rx="4"/><text class="t-title" x="160" y="37" text-anchor="middle">Browser</text>
+  <rect class="box" x="420" y="14" width="160" height="36" rx="4"/><text class="t-title" x="500" y="37" text-anchor="middle">Server</text>
+  <rect class="box" x="760" y="14" width="160" height="36" rx="4"/><text class="t-title" x="840" y="37" text-anchor="middle">Worker</text>
+  <line x1="160" y1="50" x2="160" y2="390" stroke="#c4c8c4" stroke-dasharray="4 4"/>
+  <line x1="500" y1="50" x2="500" y2="390" stroke="#c4c8c4" stroke-dasharray="4 4"/>
+  <line x1="840" y1="50" x2="840" y2="390" stroke="#c4c8c4" stroke-dasharray="4 4"/>
+
+  <g style="marker-end:url(#ah2)" stroke="#1e2124" stroke-width="1.4">
+    <line x1="160" y1="80" x2="496" y2="80"/>
+    <line x1="500" y1="104" x2="164" y2="104"/>
+    <line x1="160" y1="140" x2="496" y2="140"/>
+    <line x1="500" y1="160" x2="164" y2="160"/>
+    <line x1="160" y1="252" x2="496" y2="252"/>
+    <line x1="500" y1="272" x2="164" y2="272"/>
+    <line x1="160" y1="304" x2="496" y2="304"/>
+    <line x1="500" y1="314" x2="836" y2="314"/>
+    <line x1="500" y1="328" x2="164" y2="328"/>
+    <line x1="160" y1="368" x2="496" y2="368"/>
+  </g>
+  <g style="marker-end:url(#ah2r)" stroke="#d2402e" stroke-width="1.4">
+    <line x1="160" y1="196" x2="496" y2="196" stroke-dasharray="5 3"/>
+    <line x1="500" y1="216" x2="164" y2="216"/>
+  </g>
+  <text class="t-mono" x="176" y="74">POST /api/uploads {filename, size}</text>
+  <text class="t-mono" x="176" y="98">← {id, received: 0}   (checks size ≤ 2 GB, free disk)</text>
+  <text class="t-mono" x="176" y="134">PUT /api/uploads/{id}?offset=0   [8 MB]</text>
+  <text class="t-mono" x="176" y="154">← {received: 8388608}       … repeat for every chunk</text>
+  <text class="t-mono" x="176" y="190" style="fill:#d2402e">network drops / tab refreshed</text>
+  <text class="t-mono" x="176" y="210" style="fill:#d2402e">← 409 {received: N}  or  GET /api/uploads/{id}</text>
+  <text class="t-mono" x="176" y="246">PUT …?offset=N   resume from what the server has</text>
+  <text class="t-mono" x="176" y="266">← {received}   (duplicate chunk = harmless no-op)</text>
+  <text class="t-mono" x="176" y="298">POST /api/uploads/{id}/finish</text>
+  <text class="t-mono" x="516" y="308">enqueue job</text>
+  <text class="t-mono" x="176" y="322">← job {status: queued}</text>
+  <text class="t-mono" x="176" y="362">GET /api/jobs  (every 2 s → stage + %)</text>
+  <rect x="852" y="330" width="130" height="50" rx="4" class="box-soft"/>
+  <text class="t-mono" x="862" y="350">runs pipeline,</text>
+  <text class="t-mono" x="862" y="366">writes status.json</text>
+</svg>
+</div>
+
+<!-- ============================================================ pipeline -->
+<h2><span class="n">04</span>The pipeline</h2>
+<p class="sub">This is what the worker runs for each video in <code>pipeline.py</code>. The percentages are the share of the progress bar each stage gets, which roughly matches where the time goes.</p>
+<div class="figure">
+<svg viewBox="0 0 1000 250" role="img" aria-label="Pipeline flow diagram">
+  <defs>
+    <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1e2124"/></marker>
+  </defs>
+  <style>.pa{stroke:#1e2124;stroke-width:1.5;fill:none;marker-end:url(#ah3)}</style>
+
+  <!-- input -->
+  <rect x="10" y="60" width="80" height="70" rx="6" fill="#1e2124"/>
+  <text x="50" y="92" text-anchor="middle" style="fill:#fff;font:700 13px Archivo">video</text>
+  <text x="50" y="110" text-anchor="middle" style="fill:#c4c8c4;font:11px 'IBM Plex Mono'">.mp4</text>
+  <path class="pa" d="M90 95 L 108 95"/>
+
+  <!-- stages -->
+  <g>
+    <rect class="box" x="110" y="50" width="120" height="90" rx="6"/>
+    <text class="t-lbl" x="122" y="70">1 · 5%</text>
+    <text class="t-title" x="122" y="90">Frames</text>
+    <text class="t-mono" x="122" y="108">ffmpeg</text>
+    <text class="t-mono" x="122" y="122">120 sharpest</text>
+  </g>
+  <path class="pa" d="M230 95 L 248 95"/>
+  <g>
+    <rect class="box" x="250" y="50" width="120" height="90" rx="6"/>
+    <text class="t-lbl" x="262" y="70">2 · 15%</text>
+    <text class="t-title" x="262" y="90">Poses</text>
+    <text class="t-mono" x="262" y="108">COLMAP SfM</text>
+    <text class="t-mono" x="262" y="122">pycolmap</text>
+  </g>
+  <path class="pa" d="M370 95 L 388 95"/>
+  <g>
+    <rect class="box" x="390" y="50" width="120" height="90" rx="6" style="stroke-width:2.5"/>
+    <text class="t-lbl" x="402" y="70">3 · 45%</text>
+    <text class="t-title" x="402" y="90">Depth</text>
+    <text class="t-mono" x="402" y="108">Depth Anything</text>
+    <text class="t-mono" x="402" y="122">V2 metric</text>
+  </g>
+  <path class="pa" d="M510 95 L 528 95"/>
+  <g>
+    <rect class="box" x="530" y="50" width="120" height="90" rx="6"/>
+    <text class="t-lbl" x="542" y="70">4 · 5%</text>
+    <text class="t-title" x="542" y="90">Fuse + align</text>
+    <text class="t-mono" x="542" y="108">3 cm voxels</text>
+    <text class="t-mono" x="542" y="122">floor at y = 0</text>
+  </g>
+  <!-- branch -->
+  <path class="pa" d="M650 80 C 670 80, 670 40, 688 40"/>
+  <path class="pa" d="M650 110 C 670 110, 670 150, 688 150"/>
+  <g>
+    <rect class="box" x="690" y="6" width="130" height="70" rx="6"/>
+    <text class="t-lbl" x="702" y="24">5 · 2%</text>
+    <text class="t-title" x="702" y="44">Walls + ceiling</text>
+    <text class="t-mono" x="702" y="62">height-span + RANSAC</text>
+  </g>
+  <g>
+    <rect class="box" x="690" y="114" width="130" height="70" rx="6"/>
+    <text class="t-lbl" x="702" y="132">6 · 28%</text>
+    <text class="t-title" x="702" y="152">Furniture</text>
+    <text class="t-mono" x="702" y="170">YOLOE masks → boxes</text>
+  </g>
+  <path class="pa" d="M820 40 C 850 40, 850 85, 868 88"/>
+  <path class="pa" d="M820 150 C 850 150, 850 105, 868 102"/>
+  <rect x="870" y="55" width="120" height="80" rx="6" fill="#1e2124"/>
+  <text x="882" y="78" style="fill:#fff;font:700 13px Archivo">scene.json</text>
+  <text x="882" y="97" style="fill:#c4c8c4;font:11px 'IBM Plex Mono'">points.bin</text>
+  <text x="882" y="112" style="fill:#c4c8c4;font:11px 'IBM Plex Mono'">points.ply</text>
+
+  <!-- time bar -->
+  <text class="t-lbl" x="10" y="214">share of runtime</text>
+  <g transform="translate(130,202)">
+    <rect x="0" y="0" width="43" height="16" fill="#c4c8c4"/>
+    <rect x="43" y="0" width="129" height="16" fill="#8d9399"/>
+    <rect x="172" y="0" width="387" height="16" fill="#f5c400"/>
+    <rect x="559" y="0" width="43" height="16" fill="#c4c8c4"/>
+    <rect x="602" y="0" width="17" height="16" fill="#8d9399"/>
+    <rect x="619" y="0" width="241" height="16" fill="#5f656c"/>
+    <text class="t-mono" x="4" y="32">frames</text>
+    <text class="t-mono" x="47" y="32">poses</text>
+    <text class="t-mono" x="176" y="32" style="fill:#1e2124">depth (the slow part)</text>
+    <text class="t-mono" x="563" y="32">fuse</text>
+    <text class="t-mono" x="623" y="32">objects</text>
+  </g>
+</svg>
+</div>
+<p class="caption">In local CPU tests a whole video took about 50–75 s. Depth runs once per frame and is the bottleneck.</p>
+
+<div class="stages">
+
+  <!-- 1 frames -->
+  <div class="card">
+    <div class="top"><h3>1 · Frame picking</h3><span class="tag">extract_frames()</span></div>
+    <svg viewBox="0 0 420 90">
+      <g fill="#ecede9" stroke="#c4c8c4">
+        <rect x="10" y="20" width="36" height="28"/><rect x="50" y="20" width="36" height="28"/><rect x="90" y="20" width="36" height="28" stroke="#1e2124" stroke-width="2" fill="#fff"/>
+        <rect x="140" y="20" width="36" height="28" stroke="#1e2124" stroke-width="2" fill="#fff"/><rect x="180" y="20" width="36" height="28"/><rect x="220" y="20" width="36" height="28"/>
+        <rect x="270" y="20" width="36" height="28"/><rect x="310" y="20" width="36" height="28" stroke="#1e2124" stroke-width="2" fill="#fff"/><rect x="350" y="20" width="36" height="28"/>
+      </g>
+      <g stroke="#5f656c" stroke-dasharray="3 3"><line x1="133" y1="12" x2="133" y2="56"/><line x1="263" y1="12" x2="263" y2="56"/></g>
+      <text class="t-mono" x="10" y="74">groups of 3 candidates → keep the sharpest (bold)</text>
+      <text class="t-mono" x="10" y="12">blurry</text><text class="t-mono" x="90" y="12">sharp ✓</text>
+    </svg>
+    <p>The video is sampled at up to 6 fps, but never more than 120 frames total. For each frame it keeps, it decodes 3 neighbours and picks the least blurry, because motion blur breaks the camera tracking.</p>
+    <div class="tech">ffprobe duration → fps = min(6, 120/dur, source fps) · sharpness = variance of Laplacian · long side resized to 640 px</div>
+  </div>
+
+  <!-- 2 sfm -->
+  <div class="card">
+    <div class="top"><h3>2 · Camera poses</h3><span class="tag">run_sfm()</span></div>
+    <svg viewBox="0 0 420 90">
+      <g fill="#8d9399"><circle cx="150" cy="30" r="2"/><circle cx="190" cy="22" r="2"/><circle cx="230" cy="34" r="2"/><circle cx="270" cy="26" r="2"/><circle cx="210" cy="16" r="2"/><circle cx="250" cy="14" r="2"/><circle cx="170" cy="40" r="2"/><circle cx="290" cy="38" r="2"/></g>
+      <path d="M60 75 Q 210 55 360 75" stroke="#2c6cb0" stroke-width="1.5" fill="none" stroke-dasharray="4 3"/>
+      <g fill="#fff" stroke="#1e2124" stroke-width="1.4">
+        <path d="M80 72 l-9 12 h18 z"/><path d="M160 64 l-9 12 h18 z"/><path d="M250 64 l-9 12 h18 z"/><path d="M340 72 l-9 12 h18 z"/>
+      </g>
+      <g stroke="#c4c8c4"><line x1="160" y1="64" x2="190" y2="22"/><line x1="160" y1="64" x2="230" y2="34"/><line x1="250" y1="64" x2="230" y2="34"/><line x1="250" y1="64" x2="270" y2="26"/></g>
+      <text class="t-mono" x="10" y="14">sparse 3D points</text>
+      <text class="t-mono" x="300" y="60" style="fill:#2c6cb0">camera path</text>
+    </svg>
+    <p>Structure-from-Motion finds the same corners in neighbouring frames and solves for where every camera was and which way it pointed. It also gives a sparse set of real 3D points. Frames it can't place are dropped.</p>
+    <div class="tech">pycolmap · SIFT 8192 feats, peak 0.004 · sequential matching, overlap 15 · incremental mapper, relaxed init (4°, 50 inliers) · single SIMPLE_RADIAL camera</div>
+  </div>
+
+  <!-- 3 depth -->
+  <div class="card">
+    <div class="top"><h3>3 · Depth + scale fix</h3><span class="tag">estimate_depth()</span></div>
+    <svg viewBox="0 0 420 90">
+      <defs><linearGradient id="dg" x1="0" x2="1"><stop offset="0" stop-color="#1e2124"/><stop offset="1" stop-color="#f3f4f2"/></linearGradient></defs>
+      <rect x="10" y="12" width="110" height="64" fill="#ecede9" stroke="#c4c8c4"/>
+      <text class="t-mono" x="16" y="30">frame</text>
+      <path class="pa" d="M124 44 L 150 44" style="stroke:#1e2124;stroke-width:1.4;marker-end:url(#ah3)"/>
+      <rect x="154" y="12" width="110" height="64" fill="url(#dg)" stroke="#c4c8c4"/>
+      <text class="t-mono" x="160" y="30" style="fill:#fff">depth map</text>
+      <g fill="#d2402e"><circle cx="180" cy="50" r="3"/><circle cx="210" cy="40" r="3"/><circle cx="240" cy="58" r="3"/></g>
+      <text class="t-mono" x="280" y="34">× scale so depth</text>
+      <text class="t-mono" x="280" y="50">matches SfM points</text>
+      <text class="t-mono" x="280" y="66" style="fill:#d2402e">● = SfM point</text>
+    </svg>
+    <p>A neural network estimates the distance to every pixel in metres. Its scale wobbles from frame to frame, so each depth map is rescaled until it agrees with the SfM points visible in that frame. One global factor then converts the whole scene to metres.</p>
+    <div class="tech">Depth-Anything-V2-Metric-Indoor-Small (HF transformers, CPU torch) · per-frame median ratio vs SfM · depth *= g / s_frame</div>
+  </div>
+
+  <!-- 4 fuse -->
+  <div class="card">
+    <div class="top"><h3>4 · Fuse + level the room</h3><span class="tag">fuse() · gravity_align()</span></div>
+    <svg viewBox="0 0 420 90">
+      <g fill="#8d9399">
+        <circle cx="30" cy="30" r="1.6"/><circle cx="42" cy="50" r="1.6"/><circle cx="55" cy="25" r="1.6"/><circle cx="64" cy="58" r="1.6"/><circle cx="78" cy="35" r="1.6"/><circle cx="90" cy="52" r="1.6"/><circle cx="36" cy="66" r="1.6"/><circle cx="70" cy="18" r="1.6"/><circle cx="100" cy="28" r="1.6"/><circle cx="104" cy="64" r="1.6"/>
+      </g>
+      <g transform="rotate(-12 70 42)"><line x1="20" y1="78" x2="120" y2="78" stroke="#5f656c"/></g>
+      <path d="M135 44 L 175 44" stroke="#1e2124" stroke-width="1.4" marker-end="url(#ah3)"/>
+      <line x1="200" y1="76" x2="400" y2="76" stroke="#1e2124" stroke-width="2"/>
+      <text class="t-mono" x="330" y="70">floor y = 0</text>
+      <line x1="210" y1="76" x2="210" y2="10" stroke="#2c6cb0" stroke-width="1.4" marker-end="url(#ah3)"/>
+      <text class="t-mono" x="216" y="18" style="fill:#2c6cb0">up</text>
+      <g fill="#8d9399"><circle cx="240" cy="70" r="1.6"/><circle cx="260" cy="71" r="1.6"/><circle cx="280" cy="70" r="1.6"/><circle cx="300" cy="71" r="1.6"/><circle cx="250" cy="40" r="1.6"/><circle cx="290" cy="30" r="1.6"/></g>
+    </svg>
+    <p>Every depth pixel is pushed out along its camera ray to become a coloured 3D point. Noisy edge pixels are thrown away and the cloud is thinned to one point per 3 cm cube. The cloud is then rotated so "up" is up and shifted so the floor sits at height 0.</p>
+    <div class="tech">flying-pixel filter on depth gradients · voxel 0.03 m · up = mean camera up-vector, refined with floor plane RANSAC (3 cm threshold)</div>
+  </div>
+
+  <!-- 5 walls -->
+  <div class="card">
+    <div class="top"><h3>5 · Walls + ceiling</h3><span class="tag">detect_walls()</span></div>
+    <svg viewBox="0 0 420 110">
+      <!-- top-down grid -->
+      <g stroke="#ecede9">
+        <path d="M10 10 h180 M10 25 h180 M10 40 h180 M10 55 h180 M10 70 h180 M10 85 h180 M10 100 h180"/>
+        <path d="M10 10 v90 M25 10 v90 M40 10 v90 M55 10 v90 M70 10 v90 M85 10 v90 M100 10 v90 M115 10 v90 M130 10 v90 M145 10 v90 M160 10 v90 M175 10 v90 M190 10 v90"/>
+      </g>
+      <g fill="#1e2124">
+        <rect x="10" y="10" width="15" height="15"/><rect x="25" y="10" width="15" height="15"/><rect x="40" y="10" width="15" height="15"/><rect x="55" y="10" width="15" height="15"/><rect x="85" y="10" width="15" height="15"/><rect x="100" y="10" width="15" height="15"/><rect x="115" y="10" width="15" height="15"/><rect x="130" y="10" width="15" height="15"/><rect x="145" y="10" width="15" height="15"/><rect x="160" y="10" width="15" height="15"/>
+        <rect x="10" y="25" width="15" height="15"/><rect x="10" y="40" width="15" height="15"/><rect x="10" y="70" width="15" height="15"/><rect x="10" y="85" width="15" height="15"/>
+        <rect x="175" y="25" width="15" height="15"/><rect x="175" y="40" width="15" height="15"/><rect x="175" y="55" width="15" height="15"/><rect x="175" y="70" width="15" height="15"/>
+      </g>
+      <g fill="#c4c8c4"><rect x="40" y="55" width="15" height="15"/><rect x="55" y="55" width="15" height="15"/><rect x="40" y="70" width="15" height="15"/><rect x="55" y="70" width="15" height="15"/><rect x="70" y="70" width="15" height="15"/></g>
+      <text class="t-mono" x="88" y="66">bed</text>
+      <path d="M200 55 L 230 55" stroke="#1e2124" stroke-width="1.4" marker-end="url(#ah3)"/>
+      <g stroke="#d2402e" stroke-width="4" stroke-linecap="round">
+        <line x1="245" y1="17" x2="306" y2="17"/><line x1="337" y1="17" x2="410" y2="17"/>
+        <line x1="245" y1="17" x2="245" y2="92"/><line x1="410" y1="17" x2="410" y2="78"/>
+      </g>
+      <text class="t-mono" x="306" y="34">door gap</text>
+      <text class="t-mono" x="260" y="70" style="fill:#d2402e">wall segments</text>
+    </svg>
+    <p>Looking down on the room in 6 cm cells, a wall shows up as a cell that has points at many different heights. Furniture is short, so it doesn't count. Lines are fitted through the tall cells, snapped to the room's two main directions, and split wherever there's a gap of more than 60 cm (usually a door). The ceiling is the highest dense layer of points.</p>
+    <div class="tech">tall cell = points in ≥55% of 15 cm height bins · up to 12 RANSAC lines, 8 cm inlier band · Manhattan snap within 12° · min segment 0.5 m · ceiling = top histogram peak above 1.8 m</div>
+  </div>
+
+  <!-- 6 objects -->
+  <div class="card">
+    <div class="top"><h3>6 · Furniture boxes</h3><span class="tag">detect_objects() → fit_boxes()</span></div>
+    <svg viewBox="0 0 420 110">
+      <rect x="10" y="14" width="100" height="72" fill="#ecede9" stroke="#c4c8c4"/>
+      <path d="M28 70 L 34 46 L 88 46 L 94 70 Z" fill="#f5c400" fill-opacity=".55" stroke="#c99f00"/>
+      <text class="t-mono" x="16" y="30">"sofa" 0.71</text>
+      <path d="M115 50 L 145 50" stroke="#1e2124" stroke-width="1.4" marker-end="url(#ah3)"/>
+      <g fill="#c99f00"><circle cx="165" cy="60" r="1.8"/><circle cx="175" cy="52" r="1.8"/><circle cx="188" cy="58" r="1.8"/><circle cx="198" cy="50" r="1.8"/><circle cx="210" cy="62" r="1.8"/><circle cx="170" cy="68" r="1.8"/><circle cx="204" cy="70" r="1.8"/><circle cx="182" cy="66" r="1.8"/></g>
+      <text class="t-mono" x="160" y="90">mask → 3D pts</text>
+      <path d="M225 58 L 255 58" stroke="#1e2124" stroke-width="1.4" marker-end="url(#ah3)"/>
+      <!-- 3d box -->
+      <g fill="none" stroke="#1e2124" stroke-width="1.5">
+        <path d="M275 48 L 355 48 L 375 36 L 295 36 Z" fill="#fff6cc"/>
+        <path d="M275 48 L 275 78 L 355 78 L 355 48"/>
+        <path d="M355 78 L 375 66 L 375 36"/>
+      </g>
+      <text class="t-mono" x="275" y="98">sofa 210×90×80 cm</text>
+      <text class="t-mono" x="290" y="26">seen in 14 frames</text>
+    </svg>
+    <p>YOLOE draws an outline around every object it recognises in each frame (it knows about 4,500 kinds of thing). The outline's pixels and their depths become 3D points. Detections of the same label that land close together are merged across frames, and a box is fitted, turned to line up with the walls. Beds, sofas, tables and similar items are extended down to the floor.</p>
+    <div class="tech">yoloe-11s-seg-pf (prompt-free) · conf ≥ 0.2 · names → ~25 canonical labels · merge if XZ distance &lt; max(0.45 m, 0.6×extent) · needs ≥2 views · cv2.minAreaRect snapped to room yaw · 10–90th percentile extents</div>
+  </div>
+</div>
+
+<!-- ============================================================ outputs -->
+<h2><span class="n">05</span>What comes out</h2>
+<table>
+  <tr><th>File</th><th>Contents</th><th>Used by</th></tr>
+  <tr><td class="mono">scene.json</td><td>Walls (2D segments + height), objects (label, centre, size, yaw, views), camera path, ceiling height, floor extent, stats</td><td>Viewer: walls, boxes, cut list, ceiling</td></tr>
+  <tr><td class="mono">points.bin</td><td><code>uint32 N</code>, then N×3 <code>float32</code> xyz, then N×3 <code>uint8</code> rgb</td><td>Viewer point cloud (fast to load)</td></tr>
+  <tr><td class="mono">points.ply</td><td>The same cloud as a standard PLY</td><td>Download → Blender, MeshLab, CloudCompare</td></tr>
+</table>
+<p class="caption">Coordinates are in metres, with Y up and the floor at y = 0. A box's yaw is around Y, and the viewer applies it as <code>rotation.y = −yaw</code>.</p>
+
+<!-- ============================================================ stack -->
+<h2><span class="n">06</span>Tech stack</h2>
+<table>
+  <tr><th>Layer</th><th>What</th><th>Why this one</th></tr>
+  <tr><td>Frames</td><td>ffmpeg / ffprobe (static build)</td><td>Reads any phone codec, fast seeking</td></tr>
+  <tr><td>Camera poses</td><td>COLMAP 4 via pycolmap</td><td>Standard, accurate SfM that runs on CPU</td></tr>
+  <tr><td>Depth</td><td>Depth Anything V2 Metric Indoor (Small, 25M)</td><td>Gives metric depth for indoor scenes and is small enough for CPU</td></tr>
+  <tr><td>Objects</td><td>YOLOE-11s-seg, prompt-free</td><td>Open-vocabulary masks without needing a CLIP text encoder</td></tr>
+  <tr><td>Geometry</td><td>NumPy, SciPy, OpenCV (headless)</td><td>Hand-written RANSAC, voxel grid and box fitting</td></tr>
+  <tr><td>Server</td><td>FastAPI + uvicorn, one worker thread</td><td>Simple; jobs are kept on disk so they survive restarts</td></tr>
+  <tr><td>Viewer</td><td>Three.js 0.170, OrbitControls, CSS2D labels</td><td>No build step, works on phones</td></tr>
+  <tr><td>Hosting</td><td>systemd + cloudflared quick tunnel (HTTP/2)</td><td>No open ports and no domain needed; QUIC timed out on this network</td></tr>
+</table>
+
+<!-- ============================================================ limits -->
+<h2><span class="n">07</span>Known limits</h2>
+<ul class="limits">
+  <li><b>Fast or shaky video:</b> COLMAP can't place blurry frames. If fewer than a handful get poses, the job fails with "only N/120 frames got camera poses". Walk slowly and avoid spinning in place.</li>
+  <li><b>Duplicate boxes:</b> the same bed seen from opposite sides can merge into two boxes. A stricter merge step would fix this.</li>
+  <li><b>Walls you never filmed</b> don't exist in the output. Neither do glass and mirrors, because depth models get them wrong.</li>
+  <li><b>Scale is approximate,</b> since it depends on the depth model. Treat room sizes as close estimates, not tape-measure values.</li>
+  <li><b>The quick-tunnel URL changes</b> if the tunnel service or the VPS restarts. A named Cloudflare tunnel would make it permanent. The site has no login.</li>
+</ul>
+
+<footer>Room3D · source in <span class="mono">room3d/</span> (pipeline.py, server.py, web/index.html) · deployed at <span class="mono">vps-8core:~/apps/room3d</span></footer>
+</div>
+</body>
+</html>

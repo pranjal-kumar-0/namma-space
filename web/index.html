@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1e2124">
+<title>Room3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --graphite: #1e2124;
+    --graphite-2: #2b2f33;
+    --steel: #6b7178;
+    --rule: #c4c8c4;
+    --concrete: #dadddA;
+    --sheet: #f3f4f2;
+    --tape: #f5c400;
+    --tape-ink: #3a3200;
+    --mark: #d2402e;
+    --display: "Archivo", system-ui, sans-serif;
+    --body: "Public Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --bar: 52px;
+    --tape-h: 0px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font: 15px/1.45 var(--body); color: var(--graphite); background: var(--concrete);
+    -webkit-font-smoothing: antialiased; overflow: hidden; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--graphite); outline-offset: 2px; box-shadow: 0 0 0 5px var(--tape); }
+
+  /* ---------- top bar ---------- */
+  header { position: fixed; inset: 0 0 auto 0; height: var(--bar); background: var(--graphite); color: #fff;
+    display: flex; align-items: center; gap: 14px; padding: 0 14px 0 18px; z-index: 20; }
+  .mark { font: 800 21px/1 var(--display); font-stretch: 125%; letter-spacing: .01em; }
+  .mark b { color: var(--tape); font-weight: 800; }
+  .current { font: 13px var(--mono); color: #aeb3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    min-width: 0; flex: 1; }
+  .upload-btn { background: var(--tape); color: var(--graphite); border: 0; border-radius: 3px; height: 34px;
+    padding: 0 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .upload-btn:hover { background: #ffd31a; }
+  .upload-btn svg { width: 16px; height: 16px; }
+  #file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+  /* ---------- tape measure progress ---------- */
+  #tape { position: fixed; left: 0; right: 0; top: var(--bar); height: 40px; z-index: 19; display: flex;
+    background: var(--graphite-2); transform: translateY(-100%); transition: transform .25s ease; }
+  body.busy #tape { transform: none; }
+  body.busy { --tape-h: 40px; }
+  .case { flex: none; width: 128px; background: var(--graphite); color: #fff; display: flex; flex-direction: column;
+    justify-content: center; padding: 0 12px; border-right: 3px solid #111; border-radius: 0 0 10px 0; }
+  .case .pct { font: 600 15px/1 var(--mono); color: var(--tape); }
+  .case .what { font: 11px/1.2 var(--mono); color: #9aa0a6; text-transform: uppercase; letter-spacing: .06em; margin-top: 3px; }
+  .track { position: relative; flex: 1; overflow: hidden; }
+  .blade { position: absolute; inset: 7px auto 7px 0; width: 0; background-color: var(--tape);
+    background-image:
+      repeating-linear-gradient(90deg, var(--tape-ink) 0 1px, transparent 1px 50px),
+      repeating-linear-gradient(90deg, var(--tape-ink) 0 1px, transparent 1px 10px);
+    background-size: 100% 11px, 100% 6px; background-repeat: repeat-x; background-position: 0 0, 0 0;
+    transition: width .5s ease; box-shadow: 2px 0 0 #b38f00; }
+  .blade .stage { position: absolute; left: 10px; bottom: 2px; font: 500 12px/1 var(--mono); color: var(--tape-ink);
+    white-space: nowrap; }
+  .blade .hook { position: absolute; right: -4px; top: -3px; bottom: -3px; width: 4px; background: #8d8f91; border-radius: 0 1px 1px 0; }
+
+  /* ---------- layout ---------- */
+  main { position: fixed; top: calc(var(--bar) + var(--tape-h)); left: 0; right: 340px; bottom: 0;
+    transition: top .25s ease; }
+  #view { position: absolute; inset: 0; touch-action: none; }
+  aside { position: fixed; top: calc(var(--bar) + var(--tape-h)); right: 0; bottom: 0; width: 340px;
+    background: var(--sheet); border-left: 1px solid var(--rule); display: flex; flex-direction: column;
+    transition: top .25s ease; z-index: 10; }
+  .tabs { display: flex; border-bottom: 1px solid var(--rule); flex: none; }
+  .tabs button { flex: 1; background: none; border: 0; padding: 14px 6px 12px; cursor: pointer; font-weight: 600;
+    font-size: 14px; color: var(--steel); border-bottom: 3px solid transparent; }
+  .tabs button[aria-selected=true] { color: var(--graphite); border-bottom-color: var(--tape); }
+  .tabs .count { font: 12px var(--mono); color: var(--steel); margin-left: 4px; }
+  .pane { flex: 1; overflow: auto; padding: 4px 0 24px; }
+  .pane[hidden] { display: none; }
+  .grabber { display: none; }
+
+  /* ---------- scans ---------- */
+  .scan { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 12px 18px; border-bottom: 1px solid #e3e5e2;
+    cursor: pointer; background: none; border-left: 0; border-right: 0; border-top: 0; width: 100%; text-align: left; }
+  .scan:hover { background: #eaecea; }
+  .scan[aria-current=true] { background: #fff; box-shadow: inset 4px 0 0 var(--tape); }
+  .scan[disabled] { cursor: default; }
+  .scan .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scan .meta { grid-column: 1; font: 12px var(--mono); color: var(--steel); }
+  .scan .state { grid-row: 1 / span 2; grid-column: 2; align-self: center; font: 500 12px var(--mono); }
+  .state.err { color: var(--mark); }
+  .state.run { color: var(--graphite); background: var(--tape); padding: 2px 6px; border-radius: 2px; }
+  .scan .why { grid-column: 1 / -1; font-size: 13px; color: var(--mark); margin-top: 4px; }
+  .downloads { display: flex; gap: 8px; padding: 14px 18px 4px; }
+  .downloads a { font: 500 13px var(--mono); color: var(--graphite); text-decoration: none; border: 1px solid var(--graphite);
+    padding: 6px 10px; border-radius: 3px; }
+  .downloads a:hover { background: var(--graphite); color: #fff; }
+  .note { padding: 16px 18px; color: var(--steel); font-size: 14px; }
+  .note b { color: var(--graphite); font-weight: 600; }
+
+  /* ---------- cut list ---------- */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--steel);
+    padding: 12px 8px 8px; border-bottom: 1px solid var(--graphite); position: sticky; top: 0; background: var(--sheet); }
+  th:first-child, td:first-child { padding-left: 18px; }
+  th:last-child, td:last-child { padding-right: 18px; text-align: right; }
+  td { padding: 9px 8px; border-bottom: 1px solid #e3e5e2; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover, tbody tr.hot { background: #fff; }
+  td.dim { font: 13px var(--mono); white-space: nowrap; }
+  .sw { display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; border: 1px solid rgba(0,0,0,.35); }
+  .seen { font: 12px var(--mono); color: var(--steel); }
+
+  /* ---------- view settings ---------- */
+  fieldset { border: 0; margin: 0; padding: 14px 18px 4px; }
+  legend { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--steel); padding: 0; margin-bottom: 6px; }
+  .check { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; }
+  .check input { width: 17px; height: 17px; accent-color: var(--graphite); margin: 0; }
+  .slider { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 6px 0; font-size: 14px; }
+  .slider output { font: 12px var(--mono); color: var(--steel); }
+  .slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--graphite); }
+  .hint { font-size: 13px; color: var(--steel); margin: 2px 0 0; }
+
+  /* ---------- viewer overlays ---------- */
+  .tools { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; z-index: 2; }
+  .tools button { background: var(--sheet); border: 1px solid var(--rule); height: 34px; padding: 0 12px; border-radius: 3px;
+    cursor: pointer; font-size: 13px; font-weight: 600; }
+  .tools button:hover { border-color: var(--graphite); }
+  .tools button.shiny { position: relative; overflow: hidden; border-color: var(--tape); color: var(--tape-ink);
+    background: linear-gradient(180deg, #ffe566, var(--tape)); display: inline-flex; align-items: center; gap: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+  .tools button.shiny svg { width: 15px; height: 15px; }
+  .tools button.shiny::after { content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.85), transparent); transform: skewX(-20deg);
+    animation: shine 3.2s ease-in-out infinite; }
+  .tools button.shiny:hover { border-color: var(--tape-ink); }
+  .tools button.shiny.on { background: var(--graphite); color: var(--tape); border-color: var(--graphite); }
+  .tools button.shiny.on::after { display: none; }
+  @keyframes shine { 0%, 60% { left: -60%; } 100% { left: 160%; } }
+  #walkHud { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 4;
+    background: rgba(30,33,36,.86); color: #fff; font: 12px var(--mono); padding: 7px 12px; border-radius: 4px;
+    white-space: nowrap; pointer-events: none; }
+  #walkHud[hidden] { display: none; }
+  #walkHud kbd { background: #fff; color: var(--graphite); border-radius: 3px; padding: 1px 5px; font-weight: 600; }
+  body.walking { cursor: grab; }
+  body.walking #view:active { cursor: grabbing; }
+  @media (prefers-reduced-motion: reduce) { .tools button.shiny::after { animation: none; } }
+  .readout { position: absolute; left: 12px; bottom: 10px; font: 12px var(--mono); color: #4d5257; z-index: 2;
+    pointer-events: none; text-shadow: 0 0 4px var(--concrete); }
+  .tag { font: 500 11px/1 var(--mono); color: var(--graphite); background: #fff; border: 1px solid var(--graphite);
+    padding: 3px 5px; white-space: nowrap; pointer-events: none; }
+  #empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 3; }
+  #empty[hidden] { display: none; }
+  .empty-card { max-width: 380px; }
+  #loading { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 14px;
+    align-items: center; justify-content: center; z-index: 4; background: rgba(243,244,242,.72);
+    backdrop-filter: blur(2px); font: 500 13px "IBM Plex Mono", monospace; color: #5f656c; }
+  #loading[hidden] { display: none; }
+  .spin { width: 34px; height: 34px; border: 3px solid #d3d6d1; border-top-color: #f5c400;
+    border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty-card h1 { font: 800 30px/1.05 var(--display); font-stretch: 112%; margin: 0 0 12px; letter-spacing: -.005em; }
+  .empty-card p { margin: 0 0 10px; color: #42474c; }
+  .empty-card ul { margin: 0 0 18px; padding-left: 18px; color: #42474c; }
+  .empty-card li { margin: 3px 0; }
+  #drop-veil { position: fixed; inset: 0; background: rgba(30,33,36,.82); color: var(--tape); display: none; place-items: center;
+    z-index: 50; font: 800 28px var(--display); font-stretch: 125%; border: 3px dashed var(--tape); }
+  body.dragging #drop-veil { display: grid; }
+  #toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, calc(100% + 40px)); background: var(--graphite); color: #fff;
+    padding: 10px 16px; border-radius: 3px; font-size: 14px; z-index: 60; transition: transform .25s ease, visibility .25s;
+    max-width: calc(100vw - 32px); visibility: hidden; }
+  #toast.show { transform: translate(-50%, 0); visibility: visible; }
+  #toast.err { box-shadow: inset 4px 0 0 var(--mark); }
+
+  /* ---------- small screens: panel becomes a bottom sheet ---------- */
+  @media (max-width: 820px) {
+    :root { --bar: 48px; }
+    .mark { font-size: 18px; }
+    .current { display: none; }
+    header { justify-content: space-between; }
+    .upload-btn .long { display: none; }
+    .case { width: 96px; padding: 0 10px; }
+    main { right: 0; bottom: 52px; }
+    aside { top: auto; left: 0; width: auto; height: 52px; border-left: 0; border-top: 1px solid var(--rule);
+      box-shadow: 0 -6px 18px rgba(0,0,0,.08); transition: height .25s ease; padding-bottom: env(safe-area-inset-bottom); }
+    aside.open { height: min(62vh, 520px); }
+    .grabber { display: block; position: absolute; top: 5px; left: 50%; width: 36px; height: 4px; margin-left: -18px;
+      border-radius: 2px; background: var(--rule); }
+    .tabs button { padding: 16px 6px 12px; }
+    .tools { top: 10px; right: 10px; }
+    .readout { bottom: 8px; right: 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header>
+  <div class="mark">Room<b>3D</b></div>
+  <div class="current" id="current"></div>
+  <label class="upload-btn" for="file">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 11V2M4 5.5 8 2l4 3.5M2 11v3h12v-3"/></svg>
+    <span>Upload<span class="long"> video</span></span>
+  </label>
+  <input id="file" type="file" accept="video/*">
+</header>
+
+<div id="tape" aria-live="polite">
+  <div class="case"><span class="pct" id="tapePct">0%</span><span class="what" id="tapeWhat">Uploading</span></div>
+  <div class="track"><div class="blade" id="blade"><span class="stage" id="tapeStage"></span><span class="hook"></span></div></div>
+</div>
+
+<main>
+  <div id="view"></div>
+  <div class="tools" id="tools" hidden>
+    <button id="resetView" title="Back to the starting view">Reset</button>
+    <button id="topView" title="Look straight down at the floor plan">Top</button>
+    <button id="walkBtn" class="shiny" title="Walk through the room in first person">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="3" r="1.6"/><path d="M8 5v4m0 0-2.5 4M8 9l2.5 4M5 7h6"/></svg>
+      Walk
+    </button>
+  </div>
+  <div id="walkHud" hidden><kbd>W A S D</kbd> move · <kbd>drag</kbd> to look · <kbd>Space / Ctrl</kbd> up / down · <kbd>Esc</kbd> exit</div>
+  <div class="readout" id="readout"></div>
+  <div id="loading" hidden><div class="spin"></div><span id="loadingText">Loading scan…</span></div>
+  <div id="empty">
+    <div class="empty-card">
+      <h1>Turn a phone video into a room you can measure.</h1>
+      <p>Upload a walkthrough and get the walls, floor and furniture as boxes with sizes in centimetres.</p>
+      <ul>
+        <li>Walk slowly along the edge of the room, camera facing in.</li>
+        <li>Keep some floor in view. 20–60 seconds is enough.</li>
+        <li>Avoid quick swings and close-ups of blank walls.</li>
+      </ul>
+      <label class="upload-btn" for="file">Upload video</label>
+    </div>
+  </div>
+</main>
+
+<aside id="panel">
+  <span class="grabber"></span>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="scans">Scans</button>
+    <button role="tab" aria-selected="false" data-tab="cuts">Furniture<span class="count" id="objCount"></span></button>
+    <button role="tab" aria-selected="false" data-tab="view">View</button>
+  </div>
+  <section class="pane" data-pane="scans">
+    <div id="scans"></div>
+    <div class="downloads" id="downloads" hidden></div>
+  </section>
+  <section class="pane" data-pane="cuts" hidden>
+    <table>
+      <thead><tr><th>Item</th><th>Seen in</th><th>W × D × H cm</th></tr></thead>
+      <tbody id="cuts"></tbody>
+    </table>
+    <p class="note" id="cutsEmpty">Open a scan to see its furniture.</p>
+  </section>
+  <section class="pane" data-pane="view" hidden>
+    <fieldset>
+      <legend>Show</legend>
+      <label class="check"><input type="checkbox" id="L-points" checked> Point cloud</label>
+      <label class="check"><input type="checkbox" id="L-walls" checked> Walls</label>
+      <label class="check"><input type="checkbox" id="L-floor" checked> Floor</label>
+      <label class="check"><input type="checkbox" id="L-ceiling" checked> Ceiling</label>
+      <label class="check"><input type="checkbox" id="L-objects"> Furniture boxes</label>
+      <label class="check"><input type="checkbox" id="L-labels"> Furniture names</label>
+      <label class="check"><input type="checkbox" id="L-cams"> Camera path</label>
+    </fieldset>
+    <fieldset>
+      <legend>Adjust</legend>
+      <label class="slider">Point size <output id="psizeOut">4</output><input type="range" id="psize" min="1" max="12" value="4"></label>
+      <label class="slider">Wall opacity <output id="wopOut">35%</output><input type="range" id="wop" min="0" max="100" value="35"></label>
+    </fieldset>
+    <fieldset>
+      <legend>Rotation centre</legend>
+      <label class="check"><input type="checkbox" id="showTarget" checked> Show centre marker</label>
+      <p class="hint">Double-click (or double-tap) any point, wall or box to rotate around it.</p>
+    </fieldset>
+  </section>
+</aside>
+
+<div id="drop-veil">Drop the video to upload</div>
+<div id="toast" role="status"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// ================================================================ viewer
+const view = $('view');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+view.appendChild(renderer.domElement);
+const labelRenderer = new CSS2DRenderer();
+Object.assign(labelRenderer.domElement.style, { position: 'absolute', inset: '0', pointerEvents: 'none' });
+view.appendChild(labelRenderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xdadddA);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.02, 200);
+camera.position.set(4, 5, 6);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f8a, 2.2));
+const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+sun.position.set(3, 8, 4);
+scene.add(sun);
+const grid = new THREE.GridHelper(30, 60, 0xb9beb9, 0xc9cdc9);
+scene.add(grid);
+
+const LAYERS = ['points', 'walls', 'floor', 'ceiling', 'objects', 'cams'];
+const layers = Object.fromEntries(LAYERS.map((k) => { const g = new THREE.Group(); scene.add(g); return [k, g]; }));
+
+const marker = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12),
+  new THREE.MeshBasicMaterial({ color: 0xd2402e, depthTest: false }));
+marker.renderOrder = 10;
+scene.add(marker);
+
+new ResizeObserver(() => {
+  const { clientWidth: w, clientHeight: h } = view;
+  if (!w || !h) return;
+  renderer.setSize(w, h);
+  labelRenderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}).observe(view);
+
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = clock.getDelta();
+  if (walk.active) walk.step(dt);
+  else controls.update();
+  marker.position.copy(controls.target);
+  marker.visible = !walk.active && $('showTarget').checked && !!currentScan;
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+});
+
+// ================================================================ first-person walk
+// Drag-to-look + WASD, with collision against walls, furniture and the floor bounds.
+const walk = (() => {
+  const EYE = 1.6, SPEED = 1.7, SPRINT = 1.8, RADIUS = 0.3, SENS = 0.0024;
+  const keys = new Set();
+  const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+  const fwd = new THREE.Vector3();
+  const state = { active: false, col: null, ceil: 3 };
+  const dom = renderer.domElement;
+  let dragging = false, px = 0, py = 0;
+
+  const code = (e) => ({ KeyW: 'f', ArrowUp: 'f', KeyS: 'b', ArrowDown: 'b',
+    KeyA: 'l', ArrowLeft: 'l', KeyD: 'r', ArrowRight: 'r',
+    Space: 'u', ControlLeft: 'd', ControlRight: 'd', ShiftLeft: 's', ShiftRight: 's' }[e.code]);
+  addEventListener('keydown', (e) => {
+    if (!state.active) return;
+    if (e.code === 'Escape') return exit();
+    const k = code(e); if (k) { keys.add(k); e.preventDefault(); }
+  });
+  addEventListener('keyup', (e) => { const k = code(e); if (k) keys.delete(k); });
+
+  dom.addEventListener('pointerdown', (e) => {
+    if (!state.active) return;
+    dragging = true; px = e.clientX; py = e.clientY; dom.setPointerCapture(e.pointerId);
+  });
+  dom.addEventListener('pointermove', (e) => {
+    if (!state.active || !dragging) return;
+    euler.setFromQuaternion(camera.quaternion);
+    euler.y -= (e.clientX - px) * SENS;
+    euler.x = Math.max(-1.5, Math.min(1.5, euler.x - (e.clientY - py) * SENS));
+    euler.z = 0;
+    camera.quaternion.setFromEuler(euler);
+    px = e.clientX; py = e.clientY;
+  });
+  const endDrag = (e) => { dragging = false; try { dom.releasePointerCapture(e.pointerId); } catch {} };
+  dom.addEventListener('pointerup', endDrag);
+  dom.addEventListener('pointercancel', endDrag);
+
+  function segDist(x, z, w) {
+    const dx = w.x2 - w.x1, dz = w.z2 - w.z1, L2 = dx * dx + dz * dz || 1;
+    const t = Math.max(0, Math.min(1, ((x - w.x1) * dx + (z - w.z1) * dz) / L2));
+    return [w.x1 + t * dx, w.z1 + t * dz];
+  }
+  function resolve(x, z) {
+    const c = state.col; if (!c) return [x, z];
+    x = Math.min(c.maxx - RADIUS, Math.max(c.minx + RADIUS, x));
+    z = Math.min(c.maxz - RADIUS, Math.max(c.minz + RADIUS, z));
+    for (const w of c.walls) {
+      const [nx, nz] = segDist(x, z, w);
+      const dx = x - nx, dz = z - nz, d = Math.hypot(dx, dz);
+      if (d < RADIUS) { const k = (RADIUS - d + 1e-3) / (d || 1); x += dx * k; z += dz * k; }
+    }
+    return [x, z];
+  }
+
+  state.step = (dt) => {
+    const v = SPEED * (keys.has('s') ? SPRINT : 1) * dt;
+    camera.getWorldDirection(fwd); fwd.y = 0;
+    if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, -1);
+    fwd.normalize();
+    let mx = 0, mz = 0;
+    if (keys.has('f')) { mx += fwd.x; mz += fwd.z; }
+    if (keys.has('b')) { mx -= fwd.x; mz -= fwd.z; }
+    if (keys.has('r')) { mx += -fwd.z; mz += fwd.x; }
+    if (keys.has('l')) { mx -= -fwd.z; mz -= fwd.x; }
+    const len = Math.hypot(mx, mz);
+    if (len) {
+      const [nx, nz] = resolve(camera.position.x + mx / len * v, camera.position.z + mz / len * v);
+      camera.position.x = nx; camera.position.z = nz;
+    }
+    if (keys.has('u')) camera.position.y += v;
+    if (keys.has('d')) camera.position.y -= v;
+    camera.position.y = Math.max(0.3, Math.min(state.ceil - 0.15, camera.position.y));
+  };
+
+  function exit() {
+    if (!state.active) return;
+    state.active = false; dragging = false; keys.clear();
+    controls.enabled = true;
+    $('walkHud').hidden = true; document.body.classList.remove('walking');
+    $('walkBtn').classList.remove('on');
+    controls.target.copy(camera.position).add(camera.getWorldDirection(fwd).multiplyScalar(2));
+  }
+  state.exit = exit;
+  state.setScene = (c) => { state.col = c; state.ceil = c.ceil; };
+  state.enter = () => {
+    if (!currentScan) return;
+    const t = home ? home.target : new THREE.Vector3();
+    camera.position.set(t.x, EYE, t.z);
+    camera.lookAt(t.x, EYE, t.z - 1);
+    state.active = true; controls.enabled = false;
+    $('walkHud').hidden = false; document.body.classList.add('walking');
+    $('walkBtn').classList.add('on');
+  };
+  return state;
+})();
+$('walkBtn').onclick = () => (walk.active ? walk.exit() : walk.enter());
+
+// Muted, distinguishable box colours; same label always gets the same colour.
+const PALETTE = ['#c8553d', '#2f6f8f', '#7a9a3a', '#b58a2a', '#6a4c93', '#3d8c7a', '#a34a6b', '#5b6770', '#d08a3e', '#3f5fa8'];
+const FIXED = { bed: 0, sofa: 3, chair: 2, table: 8, desk: 4, cabinet: 1, bookshelf: 6, tv: 9, door: 7, window: 5 };
+const colorFor = (l) => PALETTE[FIXED[l] ?? [...l].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % PALETTE.length];
+
+function clearScene() {
+  for (const g of Object.values(layers)) {
+    for (const o of [...g.children]) {
+      o.traverse((x) => { x.geometry?.dispose(); x.material?.dispose?.(); if (x.isCSS2DObject) x.element.remove(); });
+      g.remove(o);
+    }
+  }
+}
+
+let currentScan = null, home = null, loadToken = 0;
+const boxByIndex = [];
+
+async function openScan(job) {
+  const token = ++loadToken;
+  currentScan = job.id;
+  history.replaceState(null, '', '#' + encodeURIComponent(job.id));
+  renderScans();
+  $('current').textContent = job.name || job.id;
+  $('loadingText').textContent = `Loading ${job.name || job.id}…`;
+  $('loading').hidden = false;
+  let sc, buf;
+  try {
+    [sc, buf] = await Promise.all([
+      fetch(`/results/${encodeURIComponent(job.id)}/scene.json`).then((r) => { if (!r.ok) throw r; return r.json(); }),
+      fetch(`/results/${encodeURIComponent(job.id)}/points.bin`).then((r) => { if (!r.ok) throw r; return r.arrayBuffer(); }),
+    ]);
+  } catch {
+    if (token === loadToken) { $('loading').hidden = true; toast('This scan’s files could not be loaded. It may have been deleted.', true); }
+    return;
+  }
+  if (token !== loadToken) return;
+  $('loading').hidden = true;
+  clearScene();
+  boxByIndex.length = 0;
+  $('empty').hidden = true;
+  $('tools').hidden = false;
+
+  const n = new Uint32Array(buf, 0, 1)[0];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(buf, 4, n * 3), 3));
+  g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(buf, 4 + n * 12, n * 3), 3, true));
+  layers.points.add(new THREE.Points(g, new THREE.PointsMaterial({ size: $('psize').value / 100, vertexColors: true })));
+
+  const fe = sc.floor_extent;
+  const fw = fe.max[0] - fe.min[0], fd = fe.max[1] - fe.min[1];
+  const fx = (fe.min[0] + fe.max[0]) / 2, fz = (fe.min[1] + fe.max[1]) / 2;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(fw, fd),
+    new THREE.MeshStandardMaterial({ color: 0x9da39d, transparent: true, opacity: .45, side: THREE.DoubleSide }));
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.set(fx, 0.001, fz);
+  layers.floor.add(floor);
+
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(fw, fd), new THREE.MeshStandardMaterial({ color: 0xffffff,
+    transparent: true, opacity: .3, side: THREE.DoubleSide, depthWrite: false }));
+  ceil.rotation.x = Math.PI / 2;
+  ceil.position.set(fx, sc.ceiling_height, fz);
+  ceil.add(new THREE.LineSegments(new THREE.EdgesGeometry(ceil.geometry), new THREE.LineBasicMaterial({ color: 0x1e2124 })));
+  layers.ceiling.add(ceil);
+
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xf3f4f2, transparent: true, opacity: $('wop').value / 100,
+    depthWrite: false, side: THREE.DoubleSide });
+  for (const w of sc.walls) {
+    const dx = w.x2 - w.x1, dz = w.z2 - w.z1, L = Math.hypot(dx, dz);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(L, w.height, 0.08), wallMat);
+    m.position.set((w.x1 + w.x2) / 2, w.height / 2, (w.z1 + w.z2) / 2);
+    m.rotation.y = -Math.atan2(dz, dx);
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineBasicMaterial({ color: 0x1e2124 })));
+    layers.walls.add(m);
+  }
+
+  const rows = [];
+  sc.objects.forEach((o, i) => {
+    const c = colorFor(o.label);
+    const geo = new THREE.BoxGeometry(...o.size);
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: c, transparent: true, opacity: .4, depthWrite: false }));
+    m.position.set(...o.center);
+    m.rotation.y = -o.yaw;
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: c })));
+    const el = document.createElement('div');
+    el.className = 'tag';
+    el.textContent = o.label;
+    const tag = new CSS2DObject(el);
+    tag.position.set(0, o.size[1] / 2 + 0.06, 0);
+    tag.userData.isTag = true;
+    m.add(tag);
+    layers.objects.add(m);
+    boxByIndex[i] = m;
+    const cm = (v) => Math.round(v * 100);
+    rows.push(`<tr data-i="${i}"><td><span class="sw" style="background:${c}"></span>${esc(o.label)}</td>
+      <td class="seen">${o.views} frames</td>
+      <td class="dim">${cm(o.size[0])} × ${cm(o.size[2])} × ${cm(o.size[1])}</td></tr>`);
+  });
+  $('cuts').innerHTML = rows.join('');
+  $('cutsEmpty').hidden = rows.length > 0;
+  $('cutsEmpty').textContent = 'No furniture was recognised in this scan.';
+  $('objCount').textContent = rows.length ? ` ${rows.length}` : '';
+
+  if (sc.cameras?.length) {
+    const pts = sc.cameras.map((c) => new THREE.Vector3(...c.pos));
+    layers.cams.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xd2402e })));
+  }
+
+  walk.setScene({
+    minx: fe.min[0], maxx: fe.max[0], minz: fe.min[1], maxz: fe.max[1], ceil: sc.ceiling_height,
+    walls: sc.walls.map((w) => ({ x1: w.x1, z1: w.z1, x2: w.x2, z2: w.z2 })),
+  });
+
+  applyToggles();
+  const R = Math.max(fw, fd, 2);
+  home = { target: new THREE.Vector3(fx, 0.8, fz), pos: new THREE.Vector3(fx + R * .8, R * 1.0 + 1.2, fz + R * .9), R };
+  grid.position.set(fx, -0.002, fz);
+  resetView();
+  const s = sc.stats || {};
+  $('readout').textContent = `${s.posed ?? '?'}/${s.frames ?? '?'} frames placed · ${sc.walls.length} walls · `
+    + `ceiling ${sc.ceiling_height.toFixed(2)} m · floor ${fw.toFixed(1)} × ${fd.toFixed(1)} m`;
+  const id = encodeURIComponent(job.id);
+  $('downloads').hidden = false;
+  $('downloads').innerHTML = `<a href="/results/${id}/points.ply?download=1">Point cloud .ply</a>
+    <a href="/results/${id}/scene.json?download=1">Layout .json</a>`;
+}
+
+function resetView() {
+  if (!home) return;
+  controls.target.copy(home.target);
+  camera.position.copy(home.pos);
+}
+$('resetView').onclick = resetView;
+$('topView').onclick = () => {
+  if (!home) return;
+  controls.target.set(home.target.x, 0, home.target.z);
+  camera.position.set(home.target.x, home.R * 1.5 + 2, home.target.z + 0.001);
+};
+
+function applyToggles() {
+  for (const k of LAYERS) layers[k].visible = $('L-' + k).checked;
+  const show = $('L-labels').checked && $('L-objects').checked;
+  layers.objects.traverse((o) => { if (o.userData.isTag) o.element.style.display = show ? '' : 'none'; });
+}
+document.querySelectorAll('[data-pane=view] input[type=checkbox]').forEach((c) => c.addEventListener('change', applyToggles));
+$('psize').oninput = () => {
+  $('psizeOut').textContent = $('psize').value;
+  layers.points.children.forEach((p) => (p.material.size = $('psize').value / 100));
+};
+$('wop').oninput = () => {
+  $('wopOut').textContent = $('wop').value + '%';
+  layers.walls.children.forEach((w) => (w.material.opacity = $('wop').value / 100));
+};
+
+// Double-click / double-tap: rotate around whatever is under the pointer.
+const ray = new THREE.Raycaster();
+ray.params.Points.threshold = 0.04;
+function pickCentre(clientX, clientY) {
+  if (walk.active) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  ray.setFromCamera(new THREE.Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1), camera);
+  const hit = ray.intersectObjects(Object.values(layers).filter((g) => g.visible), true).find((h) => !h.object.isLine);
+  if (!hit) return;
+  const shift = hit.point.clone().sub(controls.target);
+  controls.target.add(shift);
+  camera.position.add(shift);
+}
+renderer.domElement.addEventListener('dblclick', (e) => pickCentre(e.clientX, e.clientY));
+let lastTap = 0;
+renderer.domElement.addEventListener('touchend', (e) => {
+  if (e.changedTouches.length !== 1 || e.touches.length) return;
+  const now = Date.now();
+  if (now - lastTap < 300) pickCentre(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  lastTap = now;
+});
+
+$('cuts').addEventListener('click', (e) => {
+  const tr = e.target.closest('tr[data-i]');
+  if (!tr) return;
+  const m = boxByIndex[+tr.dataset.i];
+  const shift = m.position.clone().sub(controls.target);
+  controls.target.add(shift);
+  camera.position.add(shift);
+  document.querySelectorAll('#cuts tr').forEach((r) => r.classList.toggle('hot', r === tr));
+  m.material.opacity = .85;
+  setTimeout(() => (m.material.opacity = .4), 900);
+  if (matchMedia('(max-width: 820px)').matches) $('panel').classList.remove('open');
+});
+
+// ================================================================ panel tabs / sheet
+const panel = $('panel');
+document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
+  const small = matchMedia('(max-width: 820px)').matches;
+  const already = b.getAttribute('aria-selected') === 'true';
+  if (small && already && panel.classList.contains('open')) { panel.classList.remove('open'); return; }
+  selectTab(b.dataset.tab);
+  if (small) panel.classList.add('open');
+}));
+function selectTab(name) {
+  document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', x.dataset.tab === name));
+  document.querySelectorAll('.pane').forEach((p) => (p.hidden = p.dataset.pane !== name));
+}
+
+// ================================================================ scans list + polling
+let jobs = [];
+const STAGES = { frames: ['Reading frames', .05], poses: ['Placing cameras', .15], depth: ['Measuring depth', .45],
+  fusion: ['Building point cloud', .05], walls: ['Finding walls', .02], objects: ['Finding furniture', .28] };
+function jobFraction(j) {
+  let acc = 0;
+  for (const [k, [, w]] of Object.entries(STAGES)) {
+    if (k === j.stage) return acc + w * (j.frac || 0);
+    acc += w;
+  }
+  return j.status === 'done' ? 1 : 0;
+}
+const when = (t) => t ? new Date(t * 1000).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+
+function renderScans() {
+  const box = $('scans');
+  if (!jobs.length) {
+    box.innerHTML = '<p class="note">No scans yet. <b>Upload video</b> to make the first one.</p>';
+    return;
+  }
+  box.innerHTML = jobs.map((j) => {
+    let state = '', why = '';
+    if (j.status === 'done') state = `<span class="state">${j.objects ?? ''}${j.objects != null ? ' items' : ''}</span>`;
+    else if (j.status === 'error') { state = '<span class="state err">Failed</span>'; why = `<span class="why">${esc(j.error || '')}</span>`; }
+    else if (j.status === 'queued') state = `<span class="state run">Queued${j.queue_position > 1 ? ' #' + j.queue_position : ''}</span>`;
+    else state = `<span class="state run">${Math.round(jobFraction(j) * 100)}%</span>`;
+    const dur = j.elapsed ? ` · ${Math.round(j.elapsed)} s` : '';
+    return `<button class="scan" data-id="${esc(j.id)}" ${j.status !== 'done' ? 'disabled' : ''} aria-current="${j.id === currentScan}">
+      <span class="name">${esc(j.name || j.id)}</span>${state}
+      <span class="meta">${when(j.created)}${dur}</span>${why}</button>`;
+  }).join('');
+}
+$('scans').addEventListener('click', (e) => {
+  const b = e.target.closest('.scan');
+  if (!b || b.disabled) return;
+  const j = jobs.find((x) => x.id === b.dataset.id);
+  if (j) { openScan(j); if (matchMedia('(max-width: 820px)').matches) panel.classList.remove('open'); }
+});
+
+let watching = null;   // job id whose progress is shown on the tape
+let uploading = false;
+async function poll() {
+  try {
+    jobs = await fetch('/api/jobs').then((r) => r.json());
+  } catch { return; }
+  renderScans();
+  const active = jobs.filter((j) => j.status === 'queued' || j.status === 'running');
+  if (!watching && active.length) watching = active[active.length - 1].id;
+  const w = jobs.find((j) => j.id === watching);
+  if (w && !uploading) {
+    if (w.status === 'done') {
+      setTape(null);
+      toast(`Scan ready: ${w.name || w.id}`);
+      watching = null;
+      openScan(w);
+    } else if (w.status === 'error') {
+      setTape(null);
+      toast(w.error || 'Processing failed.', true);
+      watching = null;
+      selectTab('scans');
+    } else if (w.status === 'queued') {
+      setTape(0, 'Queued', w.queue_position > 1 ? `Waiting for ${w.queue_position - 1} scan(s) ahead` : 'Starting…');
+    } else {
+      const f = jobFraction(w);
+      setTape(f, 'Processing', STAGES[w.stage]?.[0] ?? w.stage);
+    }
+  }
+}
+setInterval(poll, 2000);
+
+function setTape(frac, what, stage) {
+  if (frac == null) { document.body.classList.remove('busy'); return; }
+  document.body.classList.add('busy');
+  const pct = Math.round(frac * 100);
+  $('tapePct').textContent = pct + '%';
+  $('tapeWhat').textContent = what;
+  $('blade').style.width = Math.max(pct, 2) + '%';
+  $('tapeStage').textContent = stage || '';
+}
+
+let toastTimer;
+function toast(msg, err = false) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.toggle('err', err);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), err ? 9000 : 4000);
+}
+
+// ================================================================ chunked, resumable upload
+const CHUNK = 8 * 1024 * 1024;
+const fmtMB = (b) => (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB';
+
+async function api(url, opts = {}) {
+  const r = await fetch(url, opts);
+  let body = null;
+  try { body = await r.json(); } catch {}
+  if (!r.ok) {
+    const e = new Error(typeof body?.detail === 'string' ? body.detail : `Server replied ${r.status}`);
+    e.status = r.status; e.body = body;
+    throw e;
+  }
+  return body;
+}
+
+async function upload(file) {
+  if (uploading) { toast('An upload is already running. Wait for it to finish.', true); return; }
+  if (!file.type.startsWith('video/') && !/\.(mp4|mov|m4v|webm|mkv|3gp)$/i.test(file.name)) {
+    toast(`“${file.name}” is not a video. Choose an .mp4 or .mov file.`, true);
+    return;
+  }
+  uploading = true;
+  const key = `upload:${file.name}:${file.size}:${file.lastModified}`;
+  try {
+    let id = localStorage.getItem(key), received = 0;
+    if (id) {
+      try { received = (await api(`/api/uploads/${id}`)).received; } catch { id = null; }
+    }
+    if (!id) {
+      ({ id, received } = await api('/api/uploads', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, size: file.size }) }));
+      localStorage.setItem(key, id);
+    } else if (received) toast(`Resuming upload from ${fmtMB(received)}`);
+
+    const t0 = performance.now(), start = received;
+    while (received < file.size) {
+      const chunk = file.slice(received, received + CHUNK);
+      let tries = 0;
+      for (;;) {
+        try {
+          received = (await api(`/api/uploads/${id}?offset=${received}`, { method: 'PUT', body: chunk })).received;
+          break;
+        } catch (e) {
+          if (e.status === 409 && e.body?.detail?.received != null) { received = e.body.detail.received; break; }
+          if (e.status && e.status < 500 && e.status !== 408 && e.status !== 429) throw e;
+          if (++tries > 6) throw new Error('The connection keeps dropping. Choose the same file again to resume.');
+          setTape(received / file.size, 'Uploading', `Connection lost, retrying (${tries}/6)…`);
+          await new Promise((r) => setTimeout(r, 1000 * 2 ** Math.min(tries, 4)));
+        }
+      }
+      const secs = (performance.now() - t0) / 1000;
+      const rate = (received - start) / Math.max(secs, .1);
+      const left = rate > 0 ? Math.round((file.size - received) / rate) : 0;
+      setTape(received / file.size, 'Uploading',
+        `${fmtMB(received)} of ${fmtMB(file.size)} · ${fmtMB(rate)}/s${left > 2 ? ` · ${left} s left` : ''}`);
+    }
+    const job = await api(`/api/uploads/${id}/finish`, { method: 'POST' });
+    localStorage.removeItem(key);
+    watching = job.id;
+    setTape(0, 'Queued', 'Starting…');
+    toast('Upload complete. Processing usually takes 1–3 minutes.');
+  } catch (e) {
+    setTape(null);
+    toast(e.message || 'Upload failed.', true);
+  } finally {
+    uploading = false;
+    $('file').value = '';
+    poll();
+  }
+}
+
+$('file').addEventListener('change', (e) => e.target.files[0] && upload(e.target.files[0]));
+let dragDepth = 0;
+addEventListener('dragenter', (e) => { if (e.dataTransfer?.types.includes('Files')) { dragDepth++; document.body.classList.add('dragging'); } });
+addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('dragging'); } });
+addEventListener('dragover', (e) => e.preventDefault());
+addEventListener('drop', (e) => {
+  e.preventDefault();
+  dragDepth = 0;
+  document.body.classList.remove('dragging');
+  const f = e.dataTransfer?.files?.[0];
+  if (f) upload(f);
+});
+addEventListener('beforeunload', (e) => { if (uploading) e.preventDefault(); });
+
+// ================================================================ start
+poll().then(() => {
+  const want = decodeURIComponent(location.hash.slice(1));
+  const j = jobs.find((x) => x.id === want && x.status === 'done') || (!watching && jobs.find((x) => x.status === 'done'));
+  if (j) openScan(j);
+});
+</script>
+</body>
+</html>

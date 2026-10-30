@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Room3D · Technical Abstract</title>
+<style>
+  @page { size: A4; margin: 14mm 16mm 13mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  :root {
+    --ink: #14171a; --muted: #5c636b; --line: #dde0e4; --panel: #f6f7f9;
+    --red: #c0392b; --red-soft: #fbece9; --blue: #2f6f8f; --blue-soft: #e9f2f5;
+    --amber: #b07e0c; --amber-soft: #fbf2d8;
+  }
+  body { font: 10.3pt/1.44 "Helvetica Neue", Arial, "Liberation Sans", sans-serif; color: var(--ink); margin: 0; }
+
+  /* header */
+  .kicker { font: 700 8.3pt/1 "Helvetica Neue", Arial, sans-serif; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--red); margin: 0 0 7pt; }
+  h1 { font-size: 20pt; line-height: 1.12; margin: 0 0 6pt; letter-spacing: -.015em; font-weight: 800; }
+  h1 b { color: var(--red); font-weight: 800; }
+  .lede { font-size: 10.6pt; color: #3a4047; margin: 0; max-width: 92%; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5pt; margin: 10pt 0 0; }
+  .chip { font: 600 8.3pt/1 "Helvetica Neue", Arial, sans-serif; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4.5pt 10pt; color: #2a2f35; display: inline-flex; align-items: center; gap: 5pt; }
+  .chip i { width: 6pt; height: 6pt; border-radius: 50%; display: inline-block; }
+  .band { height: 3px; background: linear-gradient(90deg, var(--red) 0 34%, var(--amber) 34% 67%, var(--blue) 67% 100%);
+    margin: 11pt 0 2pt; border-radius: 2px; }
+
+  /* sections */
+  h2 { font-size: 12.5pt; margin: 11pt 0 6pt; padding-bottom: 4pt; border-bottom: 1.5px solid var(--ink);
+    display: flex; align-items: center; gap: 8pt; }
+  h2 .n { flex: none; width: 18pt; height: 18pt; border-radius: 5px; background: var(--ink); color: #fff;
+    font: 800 10pt/18pt "Helvetica Neue", Arial, sans-serif; text-align: center; }
+  h3 { font-size: 10.4pt; margin: 9pt 0 3pt; color: #23282d; }
+  h3 .tag { font: 700 7.6pt/1 "Helvetica Neue"; letter-spacing: .05em; text-transform: uppercase; color: var(--blue);
+    border: 1px solid var(--blue); border-radius: 3px; padding: 2pt 4pt; margin-right: 6pt; vertical-align: 1.5px; }
+  p { margin: 0 0 5pt; text-align: justify; }
+  ul { margin: 0 0 6pt; padding-left: 16pt; }
+  li { margin-bottom: 2pt; }
+  strong { font-weight: 700; }
+  mark { background: linear-gradient(transparent 52%, #ffe08a 52% 92%, transparent 92%); color: inherit; padding: 0 1px; }
+  a { color: var(--blue); text-decoration: none; border-bottom: 1px solid #b9d2dc; }
+  code, .mono { font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; font-size: 8.9pt;
+    background: #eef0f2; padding: .5px 3px; border-radius: 3px; }
+
+  /* callouts */
+  .callout { border: 1px solid var(--line); border-left: 3.5px solid var(--red); background: var(--red-soft);
+    border-radius: 5px; padding: 8pt 11pt; margin: 8pt 0 9pt; font-size: 9.7pt; break-inside: avoid; }
+  .callout.blue { border-left-color: var(--blue); background: var(--blue-soft); }
+  .callout .lab { display: block; font: 800 8pt/1 "Helvetica Neue", Arial, sans-serif; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--red); margin-bottom: 4pt; }
+  .callout.blue .lab { color: var(--blue); }
+  .callout ul { margin: 2pt 0 0; }
+  .callout li { margin-bottom: 2.5pt; }
+
+  /* tables */
+  table { width: 100%; border-collapse: collapse; font-size: 9.2pt; margin: 6pt 0 9pt; break-inside: avoid;
+    border: 1px solid var(--line); }
+  thead th { background: var(--ink); color: #fff; font-weight: 600; text-align: left; padding: 5pt 8pt; }
+  tbody td { border-top: 1px solid var(--line); padding: 5pt 8pt; vertical-align: top; }
+  tbody tr:nth-child(even) td { background: #fafbfc; }
+  td.k { font-weight: 600; color: #23282d; white-space: nowrap; width: 31%; }
+  code.pill { background: var(--amber-soft); color: #6b4e05; border: 1px solid #e6cf8f; }
+
+  /* figures */
+  figure { margin: 8pt 0 4pt; break-inside: avoid; }
+  .fig { border: 1px solid var(--line); border-radius: 7px; background: #fcfcfd; padding: 10pt 12pt 8pt; }
+  .fig svg { display: block; width: 100%; height: auto; margin: 0 auto; }
+  figure.compact .fig svg { width: 82%; }
+  figure.sm .fig svg { width: 92%; }
+  figcaption { font-size: 8.9pt; color: #434a51; margin: 6pt 2pt 0; line-height: 1.42; }
+  figcaption b { color: var(--red); }
+
+  .colpair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16pt; }
+  .end { color: var(--muted); font-size: 8.6pt; border-top: 1px solid var(--line); margin-top: 12pt; padding-top: 6pt; }
+</style>
+</head>
+<body>
+
+<p class="kicker">Techfest &nbsp;·&nbsp; 3D Reconstruction &amp; Roaming &nbsp;·&nbsp; Round&nbsp;1</p>
+<h1>Room<b>3D</b>: Monocular Indoor Reconstruction<br>and a Free-Roaming Web Viewer</h1>
+<p class="lede">Turning a single handheld phone walkthrough into a measurable 3D room (point cloud, floor plan
+and furniture) that a reviewer can walk through in the browser.</p>
+<div class="chips">
+  <span class="chip"><i style="background:var(--red)"></i> One phone video</span>
+  <span class="chip"><i style="background:var(--amber)"></i> CPU only</span>
+  <span class="chip"><i style="background:var(--blue)"></i> Metric scale</span>
+  <span class="chip"><i style="background:var(--red)"></i> Floor plan + furniture</span>
+  <span class="chip"><i style="background:var(--blue)"></i> First-person roam</span>
+</div>
+<div class="band"></div>
+
+<h2 id="s1"><span class="n">1</span> Project scope</h2>
+<p>Room3D reconstructs an indoor space from <mark>one ordinary phone video</mark>. No depth sensor, LiDAR,
+calibration target, or manual measurement is required: a person simply walks the room once with the camera, and the
+system recovers the geometry. Every stage runs on <mark>CPU only</mark>, so it is portable with no GPU dependency.
+From a single clip it produces a dense colour <strong>point cloud</strong> in real-world metres, the <strong>floor</strong>
+and <strong>ceiling</strong> planes and vertical <strong>walls</strong> as a clean axis-aligned floor plan, and
+<strong>furniture</strong> as labelled, oriented 3D boxes carrying real dimensions (width&nbsp;×&nbsp;depth&nbsp;×&nbsp;height).
+The output is a compact, self-contained scene that the viewer renders with per-element layer toggles and a first-person
+free-roam mode, so the model is not only viewable but <strong>measurable and explorable</strong>.</p>
+
+<div class="callout">
+  <span class="lab">Key contributions</span>
+  <ul>
+    <li><strong>Metric from monocular.</strong> Per-frame mono-depth is bound to the Structure-from-Motion scale, so the
+      result is in <mark>genuine metres</mark>, not an arbitrary unit.</li>
+    <li><strong>Clean fusion.</strong> A flying-pixel filter removes the dominant source of monocular-depth noise
+      <em>before</em> fusion rather than cleaning up afterwards.</li>
+    <li><strong>Readable layout.</strong> Walls are recovered from tall-cell evidence and snapped to a Manhattan grid,
+      turning a noisy cloud into a straight floor plan.</li>
+    <li><strong>Trustworthy objects.</strong> Furniture detections are merged across many views into complete oriented
+      boxes with measured sizes.</li>
+  </ul>
+</div>
+
+<h2 id="s2"><span class="n">2</span> Standard Operating Procedure (capture)</h2>
+<p>Reconstruction quality is set mostly at capture time, so we define a repeatable SOP any operator can follow to map
+their own space. The guiding idea is a <strong>single slow loop</strong> around the room with the floor always in view:
+this gives the geometry stage the baseline and ground contact it needs while staying inside what a handheld clip can
+support (Figure&nbsp;<a href="#f1">1</a>).</p>
+
+<figure id="f1"><div class="fig">
+<svg viewBox="0 0 660 262" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+  <defs>
+    <marker id="pa" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">
+      <path d="M1,1 L8,4.5 L1,8 Z" fill="#c0392b"/>
+    </marker>
+  </defs>
+  <!-- room -->
+  <rect x="40" y="26" width="470" height="214" rx="10" fill="#f3f5f6" stroke="#c7ccd1"/>
+  <text x="275" y="19" font-size="9.5" fill="#7b828a" text-anchor="middle" font-weight="600">ROOM, TOP-DOWN VIEW</text>
+  <!-- furniture -->
+  <rect x="210" y="95" width="120" height="58" rx="6" fill="#ece6d7" stroke="#cdbf98"/>
+  <text x="270" y="129" font-size="9" fill="#8a7c53" text-anchor="middle">furniture</text>
+  <rect x="380" y="158" width="78" height="52" rx="6" fill="#ece6d7" stroke="#cdbf98"/>
+  <rect x="92" y="150" width="66" height="60" rx="6" fill="#ece6d7" stroke="#cdbf98"/>
+  <!-- capture path -->
+  <rect x="78" y="62" width="394" height="142" rx="16" fill="none" stroke="#c0392b" stroke-width="2.4"
+        stroke-dasharray="9 6" marker-mid="url(#pa)"/>
+  <!-- directional arrows on the path -->
+  <g stroke="#c0392b" stroke-width="2.4" fill="none">
+    <path d="M250,62 L290,62" marker-end="url(#pa)"/>
+    <path d="M472,120 L472,150" marker-end="url(#pa)"/>
+    <path d="M300,204 L260,204" marker-end="url(#pa)"/>
+    <path d="M78,150 L78,120" marker-end="url(#pa)"/>
+  </g>
+  <!-- camera positions with inward FOV cones -->
+  <g>
+    <polygon points="190,62 168,40 212,40" fill="#c0392b" opacity="0.16"/>
+    <circle cx="190" cy="62" r="5.5" fill="#c0392b"/>
+    <polygon points="472,96 494,74 494,118" fill="#c0392b" opacity="0.16"/>
+    <circle cx="472" cy="96" r="5.5" fill="#c0392b"/>
+    <polygon points="360,204 338,226 382,226" fill="#c0392b" opacity="0.16"/>
+    <circle cx="360" cy="204" r="5.5" fill="#c0392b"/>
+  </g>
+  <circle cx="78" cy="204" r="6.5" fill="#14171a"/>
+  <text x="78" y="226" font-size="8.6" fill="#14171a" text-anchor="middle" font-weight="600">start / end</text>
+  <!-- legend -->
+  <g font-size="9" fill="#434a51">
+    <circle cx="540" cy="52" r="5.5" fill="#c0392b"/><text x="552" y="55">camera, facing in</text>
+    <rect x="534" y="78" width="13" height="8" fill="none" stroke="#c0392b" stroke-width="2.2" stroke-dasharray="5 3"/>
+    <text x="552" y="86">walk path</text>
+    <rect x="534" y="104" width="13" height="10" rx="2" fill="#ece6d7" stroke="#cdbf98"/><text x="552" y="113">furniture</text>
+    <circle cx="540" cy="136" r="5.5" fill="#14171a"/><text x="552" y="139">loop closure</text>
+  </g>
+</svg>
+</div>
+<figcaption><b>Figure 1.</b> SOP capture pattern. One slow loop along the perimeter, camera facing inward and tilted
+slightly down, keeps every wall, corner, and the floor in view and closes the loop for a consistent floor plan.</figcaption>
+</figure>
+
+<table>
+  <thead><tr><th>Capture parameter</th><th>Recommended setting</th></tr></thead>
+  <tbody>
+  <tr><td class="k">Camera</td><td>Any phone rear camera, held landscape; let auto-exposure and focus settle before starting.</td></tr>
+  <tr><td class="k">Resolution / frame rate</td><td><code class="pill">1080p</code> at <code class="pill">30&nbsp;fps</code> (higher is fine; the pipeline down-samples internally).</td></tr>
+  <tr><td class="k">Trajectory</td><td>One closed loop around the perimeter, lens facing the room centre.</td></tr>
+  <tr><td class="k">Pitch</td><td>Tilt slightly downward so a strip of floor is in every frame.</td></tr>
+  <tr><td class="k">Speed</td><td>Slow, steady walk (<code class="pill">~0.3–0.5 m/s</code>); no abrupt turns or whip-pans.</td></tr>
+  <tr><td class="k">Clip length</td><td><code class="pill">20–60 s</code> for a typical room.</td></tr>
+  <tr><td class="k">Avoid</td><td>Motion blur, blank textureless walls, mirrors and glass, and people or pets moving in frame.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s3"><span class="n">3</span> System architecture</h2>
+<p>The system has three parts (Figure&nbsp;<a href="#f2">2</a>): an offline <strong>reconstruction pipeline</strong>
+that turns the video into geometry, a compact <strong>scene representation</strong> that stores the result, and a
+browser <strong>viewer</strong> that renders and roams it. The scene file is deliberately small and explicit so it can
+be inspected, re-rendered, and opened in standard tools.</p>
+
+<figure id="f2"><div class="fig">
+<svg viewBox="0 0 660 190" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+  <defs>
+    <marker id="aa" markerWidth="9" markerHeight="9" refX="6" refY="4.5" orient="auto">
+      <path d="M0,0 L7,4.5 L0,9 Z" fill="#6b727a"/>
+    </marker>
+  </defs>
+  <!-- Panel A -->
+  <g>
+    <rect x="6" y="20" width="196" height="150" rx="8" fill="#fff" stroke="#cfd4d9"/>
+    <path d="M6,28 a8,8 0 0 1 8,-8 h180 a8,8 0 0 1 8,8 v18 h-196 z" fill="#2f6f8f"/>
+    <text x="104" y="39" font-size="10.5" fill="#fff" text-anchor="middle" font-weight="700">Reconstruction pipeline</text>
+    <text x="18" y="66" font-size="8.4" fill="#9099a0" font-weight="700" letter-spacing="0.5">OFFLINE · CPU</text>
+    <g font-size="9.4" fill="#2a2f35">
+      <text x="18" y="88">· Frames &amp; camera poses</text>
+      <text x="18" y="108">· Metric depth + fusion</text>
+      <text x="18" y="128">· Floor, walls, ceiling</text>
+      <text x="18" y="148">· Furniture boxes</text>
+    </g>
+  </g>
+  <path d="M206,95 L228,95" stroke="#6b727a" stroke-width="1.6" marker-end="url(#aa)"/>
+  <!-- Panel B -->
+  <g>
+    <rect x="232" y="20" width="196" height="150" rx="8" fill="#fff" stroke="#cfd4d9"/>
+    <path d="M232,28 a8,8 0 0 1 8,-8 h180 a8,8 0 0 1 8,8 v18 h-196 z" fill="#b07e0c"/>
+    <text x="330" y="39" font-size="10.5" fill="#fff" text-anchor="middle" font-weight="700">Scene representation</text>
+    <text x="244" y="66" font-size="8.4" fill="#9099a0" font-weight="700" letter-spacing="0.5">METRIC · Y-UP</text>
+    <g font-size="9.4" fill="#2a2f35">
+      <text x="244" y="88">· scene.json (geometry)</text>
+      <text x="244" y="108">· walls · boxes · cameras</text>
+      <text x="244" y="128">· point cloud (.ply / .bin)</text>
+      <text x="244" y="148">· floor at y = 0</text>
+    </g>
+  </g>
+  <path d="M432,95 L454,95" stroke="#6b727a" stroke-width="1.6" marker-end="url(#aa)"/>
+  <!-- Panel C -->
+  <g>
+    <rect x="458" y="20" width="196" height="150" rx="8" fill="#fff" stroke="#cfd4d9"/>
+    <path d="M458,28 a8,8 0 0 1 8,-8 h180 a8,8 0 0 1 8,8 v18 h-196 z" fill="#c0392b"/>
+    <text x="556" y="39" font-size="10.5" fill="#fff" text-anchor="middle" font-weight="700">Web viewer</text>
+    <text x="470" y="66" font-size="8.4" fill="#9099a0" font-weight="700" letter-spacing="0.5">BROWSER · WEBGL</text>
+    <g font-size="9.4" fill="#2a2f35">
+      <text x="470" y="88">· toggleable layers</text>
+      <text x="470" y="108">· orbit overview</text>
+      <text x="470" y="128">· first-person free-roam</text>
+      <text x="470" y="148">· measured dimensions</text>
+    </g>
+  </g>
+</svg>
+</div>
+<figcaption><b>Figure 2.</b> System architecture. The pipeline produces geometry, the scene file stores it in metres with
+the floor at <code>y&nbsp;=&nbsp;0</code>, and the viewer renders and roams it. The <code>.ply</code> cloud also opens
+directly in <a href="https://www.meshlab.net/">MeshLab</a> or <a href="https://www.cloudcompare.org/">CloudCompare</a>.</figcaption>
+</figure>
+
+<h2 id="s4"><span class="n">4</span> Reconstruction pipeline</h2>
+<p>The pipeline is a linear sequence of seven stages, each consuming the previous stage's output
+(Figure&nbsp;<a href="#f3">3</a>). Every stage is CPU-friendly and independently inspectable.</p>
+
+<figure id="f3" class="compact"><div class="fig">
+<svg viewBox="0 0 660 400" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+  <!-- phase legend -->
+  <g font-size="9" fill="#434a51" font-weight="600">
+    <circle cx="150" cy="14" r="5.5" fill="#2f6f8f"/><text x="161" y="17">Geometry</text>
+    <circle cx="258" cy="14" r="5.5" fill="#c0392b"/><text x="269" y="17">Depth &amp; fusion</text>
+    <circle cx="392" cy="14" r="5.5" fill="#b07e0c"/><text x="403" y="17">Layout</text>
+  </g>
+  <!-- spine segments -->
+  <line x1="150" y1="54" x2="150" y2="110" stroke="#2f6f8f" stroke-width="3"/>
+  <line x1="150" y1="110" x2="150" y2="222" stroke="#c0392b" stroke-width="3"/>
+  <line x1="150" y1="222" x2="150" y2="390" stroke="#b07e0c" stroke-width="3"/>
+
+  <!-- rows: cx node 150, title x 170, pill x 470 w160 -->
+  <!-- 1 -->
+  <circle cx="150" cy="54" r="14" fill="#2f6f8f"/><text x="150" y="58" font-size="10" fill="#fff" font-weight="800" text-anchor="middle">1</text>
+  <text x="172" y="50" font-size="10.4" font-weight="700" fill="#14171a">Frame selection</text>
+  <text x="172" y="64" font-size="8.6" fill="#5c636b">keep the sharpest frame of each small group</text>
+  <rect x="470" y="42" width="184" height="24" rx="12" fill="#e9f2f5" stroke="#9cc1cf"/>
+  <text x="562" y="58" font-size="8.7" fill="#285c76" text-anchor="middle" font-weight="600">≤ 90 crisp frames</text>
+  <!-- 2 -->
+  <circle cx="150" cy="110" r="14" fill="#2f6f8f"/><text x="150" y="114" font-size="10" fill="#fff" font-weight="800" text-anchor="middle">2</text>
+  <text x="172" y="106" font-size="10.4" font-weight="700" fill="#14171a">Camera poses (SfM)</text>
+  <text x="172" y="120" font-size="8.6" fill="#5c636b">features, sequential matching, incremental map</text>
+  <rect x="470" y="98" width="184" height="24" rx="12" fill="#e9f2f5" stroke="#9cc1cf"/>
+  <text x="562" y="114" font-size="8.7" fill="#285c76" text-anchor="middle" font-weight="600">K, R, t + sparse points</text>
+  <!-- 3 -->
+  <circle cx="150" cy="166" r="14" fill="#c0392b"/><text x="150" y="170" font-size="10" fill="#fff" font-weight="800" text-anchor="middle">3</text>
+  <text x="172" y="162" font-size="10.4" font-weight="700" fill="#14171a">Metric depth</text>
+  <text x="172" y="176" font-size="8.6" fill="#5c636b">mono-depth scaled to the SfM points</text>
+  <rect x="470" y="154" width="184" height="24" rx="12" fill="#fbece9" stroke="#e3a99f"/>
+  <text x="562" y="170" font-size="8.7" fill="#8f2a20" text-anchor="middle" font-weight="600">dense metric depth</text>
+  <!-- 4 -->
+  <circle cx="150" cy="222" r="14" fill="#c0392b"/><text x="150" y="226" font-size="10" fill="#fff" font-weight="800" text-anchor="middle">4</text>
+  <text x="172" y="218" font-size="10.4" font-weight="700" fill="#14171a">Fusion</text>
+  <text x="172" y="232" font-size="8.6" fill="#5c636b">back-project, flying-pixel filter, voxel down-sample</text>
+  <rect x="470" y="210" width="184" height="24" rx="12" fill="#fbece9" stroke="#e3a99f"/>
+  <text x="562" y="226" font-size="8.7" fill="#8f2a20" text-anchor="middle" font-weight="600">colour point cloud</text>
+  <!-- 5 -->
+  <circle cx="150" cy="278" r="14" fill="#b07e0c"/><text x="150" y="282" font-size="10" fill="#fff" font-weight="800" text-anchor="middle">5</text>
+  <text x="172" y="274" font-size="10.4" font-weight="700" fill="#14171a">Gravity alignment</text>
+  <text x="172" y="288" font-size="8.6" fill="#5c636b">camera-up estimate refined by floor-plane RANSAC</text>
+  <rect x="470" y="266" width="184" height="24" rx="12" fill="#fbf2d8" stroke="#dcc078"/>
+  <text x="562" y="282" font-size="8.7" fill="#6b4e05" text-anchor="middle" font-weight="600">Y-up, floor y = 0</text>
+  <!-- 6 -->
+  <circle cx="150" cy="334" r="14" fill="#b07e0c"/><text x="150" y="338" font-size="10" fill="#fff" font-weight="800" text-anchor="middle">6</text>
+  <text x="172" y="330" font-size="10.4" font-weight="700" fill="#14171a">Walls &amp; ceiling</text>
+  <text x="172" y="344" font-size="8.6" fill="#5c636b">tall-cell evidence, Manhattan-snapped line fit</text>
+  <rect x="470" y="322" width="184" height="24" rx="12" fill="#fbf2d8" stroke="#dcc078"/>
+  <text x="562" y="338" font-size="8.7" fill="#6b4e05" text-anchor="middle" font-weight="600">floor plan + height</text>
+  <!-- 7 -->
+  <circle cx="150" cy="390" r="14" fill="#b07e0c"/><text x="150" y="394" font-size="10" fill="#fff" font-weight="800" text-anchor="middle">7</text>
+  <text x="172" y="386" font-size="10.4" font-weight="700" fill="#14171a">Furniture</text>
+  <text x="172" y="400" font-size="8.6" fill="#5c636b">segment, lift to 3D, merge across views</text>
+  <rect x="470" y="378" width="184" height="24" rx="12" fill="#fbf2d8" stroke="#dcc078"/>
+  <text x="562" y="394" font-size="8.7" fill="#6b4e05" text-anchor="middle" font-weight="600">oriented boxes</text>
+</svg>
+</div>
+<figcaption><b>Figure 3.</b> The seven-stage pipeline as a timeline. Colour marks the three phases: geometry (blue),
+depth and fusion (red), and layout (amber). Each stage's output (right) is the next stage's input.</figcaption>
+</figure>
+
+<h3><span class="tag">4.1</span> Frame selection</h3>
+<p>Frames are sampled at an adaptive rate so a clip of any length yields up to 90 frames. Within each small group of
+candidates the <strong>sharpest</strong> frame is kept, measured by the variance of its Laplacian, which discards
+motion-blurred frames that would poison matching. Frames are resized to a 900&nbsp;px long side to keep later stages
+fast.</p>
+
+<h3><span class="tag">4.2</span> Camera poses (Structure-from-Motion)</h3>
+<p><a href="https://colmap.github.io/">COLMAP</a> extracts SIFT features under a single shared radial-distortion camera
+model, matches them <em>sequentially</em> across neighbouring frames (the natural ordering of a walkthrough), and runs
+incremental mapping. Initialisation is deliberately relaxed (handheld walkthroughs have small baselines that defeat the
+default thresholds), so short, low-parallax clips still register. The stage yields each frame's intrinsics and pose plus
+a sparse 3D point cloud with 2D-to-3D correspondences used to anchor scale.</p>
+
+<h3><span class="tag">4.3</span> Metric depth</h3>
+<p>A monocular network (<a href="https://github.com/DepthAnything/Depth-Anything-V2">Depth-Anything-V2</a>, indoor-metric
+variant) predicts a dense depth map per frame. Mono-depth is only correct up to an unknown per-frame scale, so each map
+is aligned to the SfM points by the <strong>median ratio</strong> between predicted and SfM depth at the reprojected
+keypoints.</p>
+<div class="callout blue">
+  <span class="lab">Key idea · metric scale</span>
+  A single <strong>global scale</strong> is shared across all frames, instead of a separate scale per frame. This is the
+  step that makes the reconstruction <mark>genuinely metric</mark> and keeps depth and poses mutually consistent rather
+  than drifting frame to frame.
+</div>
+
+<h3><span class="tag">4.4</span> Fusion</h3>
+<p>Every depth map is back-projected into world space with its intrinsics and pose. A <strong>flying-pixel filter</strong>
+rejects pixels on steep depth discontinuities (high relative gradient). These are the stray points that monocular depth
+smears along the viewing ray and the dominant source of noise. Points beyond 8&nbsp;m are also dropped, and the combined
+cloud is voxel-down-sampled at 2.5&nbsp;cm to a uniform density.</p>
+
+<h3><span class="tag">4.5</span> Gravity alignment</h3>
+<p>The up direction is estimated from the cameras' own up-vectors, then refined by RANSAC-fitting the dominant horizontal
+plane beneath the cameras (the floor). The cloud is rotated to a true <strong>Y-up</strong> frame and translated so the
+floor lies at <code>y&nbsp;=&nbsp;0</code>, making heights, the floor plan, and furniture placement directly meaningful.</p>
+
+<h3><span class="tag">4.6</span> Walls and ceiling</h3>
+<p>The ceiling height is read from the upper peak of the height histogram. For walls, the floor plan is binned into cells
+and any cell whose points span a <strong>tall vertical range</strong> is taken as wall evidence. The room's dominant
+orientation is estimated from the gradients of that floor-plan image, and wall segments are fitted as RANSAC lines
+<strong>snapped to the Manhattan directions</strong> (exploiting the fact that indoor rooms are mostly axis-aligned),
+turning noisy evidence into a clean, straight floor plan.</p>
+
+<h3><span class="tag">4.7</span> Furniture</h3>
+<p>A prompt-free open-vocabulary segmenter (<a href="https://docs.ultralytics.com/models/yoloe/">YOLOE</a>) masks
+furniture in every frame; masks are cleaned by erosion and a depth-median gate that removes background bleed, then
+back-projected to 3D and lifted into the aligned frame. Observations of the same object across frames are
+<strong>merged</strong> by label and proximity, and each object is fitted with an oriented bounding box (minimum-area
+rectangle in plan, snapped to the room yaw). Synonymous detector labels collapse to a canonical vocabulary, so one real
+object becomes exactly one box with its measured footprint, height, and name.</p>
+
+<h2 id="s5"><span class="n">5</span> Technical approach &amp; design decisions</h2>
+<div class="colpair">
+<ul>
+  <li><strong>Monocular over multi-view stereo.</strong> Dense MVS is slow on CPU and fails on the textureless walls that
+    dominate indoor scenes; a learned metric-depth prior fills those regions densely.</li>
+  <li><strong>Global scale sharing.</strong> Per-frame scale drifts; one median scale keeps the floor flat and the cloud
+    coherent across the whole walk.</li>
+  <li><strong>Flying-pixel rejection.</strong> The largest noise source in monocular fusion is edge streaking; a
+    relative-gradient mask removes it cheaply, before fusion.</li>
+</ul>
+<ul>
+  <li><strong>Manhattan floor plan.</strong> Snapping segments to one dominant yaw converts scattered evidence into
+    straight, right-angled walls that read as a real plan.</li>
+  <li><strong>Multi-view box fusion.</strong> Any single mask is partial; merging detections across frames yields
+    complete, stable boxes with trustworthy sizes.</li>
+  <li><strong>CPU-only throughout.</strong> Every stage runs without a GPU, making the system portable and reproducible
+    on commodity hardware.</li>
+</ul>
+</div>
+
+<h2 id="s6"><span class="n">6</span> Free-roaming web viewer</h2>
+<p>The viewer renders the scene in the browser with <a href="https://threejs.org/">Three.js</a> / WebGL directly from
+the compact representation. Each element is a toggleable layer (point cloud, walls, floor, ceiling, furniture boxes,
+labels, and the camera path), so a reviewer can isolate exactly what they want to judge, and furniture boxes display
+their measured dimensions.</p>
+<p>Two navigation modes are provided. <strong>Orbit</strong> gives a whole-room overview, with double-click to recentre
+and a top-down floor-plan view. <strong>Free-roam</strong> drops the viewer into a first-person walk at eye height
+(1.6&nbsp;m): <code>W&nbsp;A&nbsp;S&nbsp;D</code> or arrow keys move, mouse-drag looks around, and
+<code>Space</code>&nbsp;/&nbsp;<code>Ctrl</code> change height. Movement is blocked by the reconstructed walls and kept
+inside the room, so a reviewer can <mark>walk through the reconstructed space</mark> as if standing inside it, directly
+satisfying the roaming requirement.</p>
+
+<div class="callout">
+  <span class="lab">Fidelity &amp; limitations</span>
+  Because depth is monocular, accuracy is centimetre-level rather than survey-grade, and reconstruction degrades on
+  reflective or glass surfaces, very dark rooms, and large blank walls with no texture for the pose stage. The SOP in
+  Section&nbsp;<a href="#s2">2</a> is designed to steer capture away from exactly these failure modes, which is why
+  capture discipline is treated as a first-class part of the method.
+</div>
+
+<p class="end">Built on COLMAP (poses), Depth-Anything-V2 (metric depth), YOLOE (segmentation), and Three.js (viewer).
+Model geometry is stored in metres, Y-up, with the floor at <code>y&nbsp;=&nbsp;0</code>.</p>
+
+</body>
+</html>
