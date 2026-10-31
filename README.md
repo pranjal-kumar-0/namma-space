@@ -84,3 +84,12 @@ tests/data/        sample videos
 docs/              technical abstract (PDF + HTML)
 outputs/           reconstructions (created on run)
 ```
+
+## LiDAR scans (Polycam)
+
+Upload (or pass to `pipeline.py`) a Polycam **Raw Data** export as a `.zip` or folder instead of a video.
+Measured depth and metric poses replace SfM and the depth network, so the rest of the pipeline is unchanged.
+It expects `keyframes/{corrected_images|images}`, `keyframes/{corrected_cameras|cameras}` (fx, fy, cx, cy,
+`t_00..t_23` camera-to-world) and `keyframes/depth` (16-bit mm PNG). `roomkit/polycam.py` picks the camera axis
+convention by checking which one makes the depth maps agree. `tests/make_polycam_synthetic.py` builds a fake
+export from an existing scan for testing.

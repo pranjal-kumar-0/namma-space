@@ -231,7 +231,7 @@ def get_job(job_id: str):
 
 RESULT_FILES = {"scene.json": "application/json", "points.bin": "application/octet-stream",
                 "points.ply": "application/octet-stream", "mesh.ply": "application/octet-stream",
-                "mesh.bin": "application/octet-stream", "mesh.jpg": "image/jpeg"}
+                "mesh.bin": "application/octet-stream", "model.glb": "model/gltf-binary", "mesh.jpg": "image/jpeg"}
 
 
 @app.get("/results/{job_id}/{name}")

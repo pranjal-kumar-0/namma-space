@@ -209,7 +209,7 @@
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 11V2M4 5.5 8 2l4 3.5M2 11v3h12v-3"/></svg>
     <span>Upload<span class="long"> video</span></span>
   </label>
-  <input id="file" type="file" accept="video/*">
+  <input id="file" type="file" accept="video/*,.zip,.glb">
 </header>
 
 <div id="tape" aria-live="polite">
@@ -296,6 +296,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -507,6 +508,20 @@ async function loadTexturedMesh(base) {
   return new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
 }
 
+// A finished textured mesh (Polycam .glb): shown unlit like the other surfaces, floor moved to y=0.
+async function loadModel(url, offsetY) {
+  const gltf = await new GLTFLoader().loadAsync(url);
+  const root = gltf.scene;
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const map = o.material.map;
+    if (map) map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    o.material = new THREE.MeshBasicMaterial({ map, color: map ? 0xffffff : o.material.color, side: THREE.DoubleSide });
+  });
+  root.position.y += offsetY;
+  return root;
+}
+
 async function openScan(job) {
   const token = ++loadToken;
   currentScan = job.id;
@@ -539,7 +554,7 @@ async function openScan(job) {
   layers.points.add(new THREE.Points(g, new THREE.PointsMaterial({ size: $('psize').value / 100, vertexColors: true })));
 
   // Solid surface when the scan has one; the point cloud is then hidden by default.
-  const hasMesh = !!sc.mesh;
+  const hasMesh = !!(sc.mesh || sc.model);
   $('L-mesh').disabled = !hasMesh;
   $('L-mesh').checked = hasMesh;
   $('L-points').checked = !hasMesh;
@@ -547,10 +562,11 @@ async function openScan(job) {
     try {
       const base = `/results/${encodeURIComponent(job.id)}/`;
       let mesh = null;
-      if (sc.mesh_textured) {
+      if (sc.model) mesh = await loadModel(base + sc.model.file, sc.model.offset_y || 0);
+      else if (sc.mesh_textured) {
         try { mesh = await loadTexturedMesh(base); } catch { /* fall back to the vertex-coloured mesh */ }
       }
-      if (!mesh) {
+      if (!mesh && sc.mesh) {
         const geo = await new PLYLoader().loadAsync(base + sc.mesh);
         mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
       }
@@ -633,12 +649,14 @@ async function openScan(job) {
   grid.position.set(fx, -0.002, fz);
   resetView();
   const s = sc.stats || {};
-  $('readout').textContent = `${s.posed ?? '?'}/${s.frames ?? '?'} frames placed · ${sc.walls.length} walls · `
+  const lead = sc.model ? 'Imported mesh' : `${s.posed ?? '?'}/${s.frames ?? '?'} frames placed`;
+  $('readout').textContent = `${lead} · ${sc.walls.length} walls · `
     + `ceiling ${sc.ceiling_height.toFixed(2)} m · floor ${fw.toFixed(1)} × ${fd.toFixed(1)} m`;
   const id = encodeURIComponent(job.id);
   $('downloads').hidden = false;
   $('downloads').innerHTML = `<a href="/results/${id}/points.ply?download=1">Point cloud .ply</a>
-    <a href="/results/${id}/scene.json?download=1">Layout .json</a>`;
+    <a href="/results/${id}/scene.json?download=1">Layout .json</a>`
+    + (sc.model ? `<a href="/results/${id}/${sc.model.file}?download=1">Model .glb</a>` : '');
 }
 
 function resetView() {
@@ -826,8 +844,8 @@ async function api(url, opts = {}) {
 
 async function upload(file) {
   if (uploading) { toast('An upload is already running. Wait for it to finish.', true); return; }
-  if (!file.type.startsWith('video/') && !/\.(mp4|mov|m4v|webm|mkv|3gp)$/i.test(file.name)) {
-    toast(`“${file.name}” is not a video. Choose an .mp4 or .mov file.`, true);
+  if (!file.type.startsWith('video/') && !/\.(mp4|mov|m4v|webm|mkv|3gp|zip|glb)$/i.test(file.name)) {
+    toast(`“${file.name}” is not a video, Polycam .zip or .glb. Choose an .mp4, .mov, .zip or .glb file.`, true);
     return;
   }
   uploading = true;
@@ -895,9 +913,11 @@ addEventListener('drop', (e) => {
 addEventListener('beforeunload', (e) => { if (uploading) e.preventDefault(); });
 
 // ================================================================ start
+const DEFAULT_SCAN = 'default_model';   // opened on first load: outputs/default_model, from tests/data/*.glb
 poll().then(() => {
   const want = decodeURIComponent(location.hash.slice(1));
-  const j = jobs.find((x) => x.id === want && x.status === 'done') || (!watching && jobs.find((x) => x.status === 'done'));
+  const done = (id) => jobs.find((x) => x.id === id && x.status === 'done');
+  const j = done(want) || (!watching && (done(DEFAULT_SCAN) || jobs.find((x) => x.status === 'done')));
   if (j) openScan(j);
 });
 </script>

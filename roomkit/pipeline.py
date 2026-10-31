@@ -13,9 +13,11 @@ from .config import Progress
 from .depth import estimate_depth
 from .export import write_outputs
 from .frames import extract_frames
+from .glbscan import import_glb
 from .fusion import fuse, reset_caches
 from .furniture import detect_objects, fit_boxes, lift_detections, merge_observations
 from .mesh import build_mesh
+from .polycam import is_polycam, load_polycam
 from .path import build_walk_path
 from .sfm import run_sfm
 from .walls import ceiling_height, detect_walls
@@ -24,23 +26,32 @@ from .walls import ceiling_height, detect_walls
 def process(video, out, progress: Progress | None = None) -> dict:
     progress = progress or (lambda stage, frac: None)
     out = Path(out)
+    if Path(video).suffix.lower() == ".glb":      # a finished mesh: nothing to reconstruct
+        return import_glb(Path(video), out, progress)
     work = out / "work"
     frames_dir = work / "frames"
     shutil.rmtree(frames_dir, ignore_errors=True)
 
-    progress("frames", 0)
-    imgs = extract_frames(Path(video), frames_dir)
-    if len(imgs) < 5:
-        raise RuntimeError(f"only {len(imgs)} frames extracted; video too short?")
-    progress("frames", 1)
+    lidar = is_polycam(Path(video))
+    if lidar:                    # measured depth + metric poses: no SfM, no depth network
+        frames = load_polycam(Path(video), work, progress)
+        imgs = frames
+        for stage in ("poses", "depth"):
+            progress(stage, 1)
+    else:
+        progress("frames", 0)
+        imgs = extract_frames(Path(video), frames_dir)
+        if len(imgs) < 5:
+            raise RuntimeError(f"only {len(imgs)} frames extracted; video too short?")
+        progress("frames", 1)
 
-    progress("poses", 0)
-    frames = run_sfm(frames_dir, work)
-    if len(frames) < 5:
-        raise RuntimeError(f"only {len(frames)}/{len(imgs)} frames got camera poses")
-    progress("poses", 1)
+        progress("poses", 0)
+        frames = run_sfm(frames_dir, work)
+        if len(frames) < 5:
+            raise RuntimeError(f"only {len(frames)}/{len(imgs)} frames got camera poses")
+        progress("poses", 1)
 
-    estimate_depth(frames, progress)
+        estimate_depth(frames, progress)
 
     progress("fusion", 0)
     P, C = fuse(frames)
@@ -69,7 +80,8 @@ def process(video, out, progress: Progress | None = None) -> dict:
     scene["walk_path"] = build_walk_path(cams)
     scene["mesh"] = "mesh.ply" if mesh_info else None
     scene["mesh_textured"] = bool(mesh_info and mesh_info["textured"])
-    scene["stats"] = {"frames": len(imgs), "posed": len(frames), "points": int(len(P))}
+    scene["stats"] = {"frames": len(imgs), "posed": len(frames), "points": int(len(P)),
+                      "source": "lidar" if lidar else "video"}
     (out / "scene.json").write_text(json.dumps(scene, indent=1))
     reset_caches()
     progress("done", 1)

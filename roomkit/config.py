@@ -11,6 +11,7 @@ MAX_FRAMES = 90
 SHARPNESS_POOL = 3
 FRAME_LONG_SIDE = 900
 FUSE_VOXEL = 0.025
+LIDAR_MAX_FRAMES = 120     # keyframes kept from a LiDAR scan (no SfM cost, so more than video)
 
 MESH_RES = 320             # TSDF cells per side of the room-sized cube (~2-3 cm for a normal room)
 MESH_MAX_DEPTH = 6.0
