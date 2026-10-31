@@ -1,0 +1,448 @@
+university Elective
+advanced competitive coding -2
+A2+TA2 	CB-502C DEEPTHI KATTERA 	            92
+D1+TDD1 CB-502C ISHU KUMAR                  	92
+D2+TDD2 CB-502C VENKATA SAI SUDHEER PAVULURI    92
+F1+TFF1 CB-502C DEEPTHI KATTERA         	    92
+F2+TFF2 CB-502C RAGHUNATH               	    92
+G1+TG1 	CB-502C VENKATA SAI SUDHEER PAVULURI 	92
+G2+TG2 	CB-502C RAKSHITHA KARRA             	92
+A1+TA1 	CB-502C DEEPTHI KATTERA             	91
+B2+TB2 	CB-502C DURGA PRASAD L              	91
+C1+TCC1 CB-502C ISHU KUMAR 	                    91
+E1+TE1 	CB-502C RAGHUNATH                   	91
+E2+TE2 	CB-502C PRASANNA LAKSHMI            	91
+A1+TA1 	CB-502A VENKATA SAI SUDHEER PAVULURI 	90
+A1+TA1 	CB-502B RAKSHITHA KARRA             	90
+A1+TA1 	CB-517 	ARIVARASAN A                	90
+A2+TA2 	CB-502B VIJAYKUMAR THALLA            	90
+A2+TA2 	CB-517 	ARIVARASAN A                	90
+B1+TB1 	CB-502A VIJAYKUMAR THALLA 	            90
+B1+TB1 	CB-517 	ARIVARASAN A 	                90
+B2+TB2 	CB-502A RAKSHITHA KARRA 	            90
+B2+TB2 	CB-502B DEEPTHI KATTERA 	            90
+C1+TC1 	CB-502A VIJAYKUMAR THALLA           	90
+C1+TCC1 CB-517 	DURGA PRASAD L 	                90
+C2+TC2 	CB-502A RAGHUNATH 	                    90
+C2+TC2 	CB-502B DURGA PRASAD L 	                90
+C2+TCC2 CB-502C PRASANNA LAKSHMI            	90
+C2+TCC2 CB-517 	RAJKISHORE G 	                90
+D1+TDD1 CB-517 	RAGHUNATH 	                    90
+D2+TD2 	CB-502B VIJAYKUMAR THALLA 	            90
+D2+TDD2 CB-517 	PRASANNA LAKSHMI 	            90
+E1+TE1 	CB-502B RAKSHITHA KARRA             	90
+E2+TE2 	CB-517 	DURGA PRASAD L 	                90
+F1+TF1 	CB-502B ISHU KUMAR 	                    90
+F1+TF1 	CB-502A VIJAYKUMAR THALLA             	90
+F1+TFF1 CB-517 	ARIVARASAN A 	                90
+F2+TF2 	CB-502A ISHU KUMAR                  	90
+F2+TF2 	CB-502B VIJAYKUMAR THALLA           	90
+F2+TFF2 CB-517 	ARIVARASAN A                	90
+G2+TG2 	CB-517 	DEEPTHI KATTERA             	90
+B1+TB1 	CB-502B VENKATA SAI SUDHEER PAVULURI 	89
+C1+TC1 	CB-502B PRASANNA LAKSHMI            	89
+D1+TD1 	CB-502B PRASANNA LAKSHMI             	89
+E1+TE1 	CB-517 	DURGA PRASAD L              	89
+E2+TE2 	CB-502B VENKATA SAI SUDHEER PAVULURI 	89
+G1+TG1 	CB-517 	ARIVARASAN A                	88
+A2+TA2 	CB-502A RAKSHITHA KARRA 	            87
+B1+TB1 	CB-502C DEEPTHI KATTERA 	            87
+C2+TC2 	CB-414 	VENKATA SAI SUDHEER PAVULURI 	71 
+
+Program Core
+web technologies
+E1+TE1 	CB-433 	MITHILESH KUMAR DUBEY      	69
+E2+TE2 	CB-511 	GOSALA BETHANY          	69
+E2+TE2 	CB-514 	MITHILESH KUMAR DUBEY 	    69
+D1+TDD1 CB-521 	MITHILESH KUMAR DUBEY 	    68
+E2+TE2 	CB-504 	Madugula Kiran Kumar    	68
+E1+TE1 	CB-423 	TATIREDDY SUBBAREDDY    	67
+D2+TDD2 CB-524 	Shalini Ramanathan 	        66
+E1+TE1 	CB-525 	PRAKASH KUMAR SARANGI   	66
+E1+TE1 	CB-432 	Kommerla Siva Kumar 	    66
+E2+TE2 	CB-507 	Ganesh Reddy Karri 	        66
+E2+TE2 	CB-510 	Kommerla Siva Kumar 	    66
+D1+TD1 	CB-511 	TATIREDDY SUBBAREDDY 	    65
+E1+TE1 	CB-430 	GOSALA BETHANY 	            65
+E2+TE2 	CB-513 	Selva Kumar S           	65
+E2+TE2 	CB-516 	Amgothu Shanthi 	        65
+E2+TE2 	CB-506 	TATIREDDY SUBBAREDDY    	64
+D1+TDD1 CB-519 	Kailash Chandra Mishra  	63
+D2+TD2 	CB-512 	PRAKASH KUMAR SARANGI   	63
+E1+TE1 	CB-501 	Madugula Kiran Kumar    	63
+D1+TD1 	CB-516 	Kommerla Siva Kumar     	62
+D2+TD2 	CB-514 	Selva Kumar S 	            61
+E1+TE1 	CB-424 	Guruprakash Jayabalasamy 	61
+E1+TE1 	CB-426 	Amgothu Shanthi 	        61
+E2+TE2 	CB-505 	Shalini Ramanathan      	61
+D1+TDD1 CB-520 	Ganji Tejasree           	60
+D2+TD2 	CB-510 	GOSALA BETHANY          	60
+D2+TD2 	CB-506 	Adla Padma              	59
+D2+TD2 	CB-511 	Guruprakash Jayabalasamy 	59
+D2+TD2 	CB-516 	Chirra Venkata Ramireddy 	58
+E1+TE1 	CB-422 	Ganji Tejasree 	            58
+E1+TE1 	CB-429 	Ganesh Reddy Karri       	58
+E2+TE2 	CB-501 	Adla Padma               	58
+D2+TDD2 CB-526 	Gayathri Dhara 	            57
+D1+TD1 	CB-513 	Adla Padma 	                52
+D1+TD1 	CB-518 	Shalini Ramanathan      	50
+D2+TD2 	CB-513 	Ganji Tejasree 	            49
+D2+TD2 	CB-507 	Kailash Chandra Mishra  	48
+D1+TD1 	CB-512 	Pujari Jeevana Jyothi    	47
+D2+TDD2 CB-525 	Pujari Jeevana Jyothi   	46
+E1+TE1 	CB-431 	Pujari Jeevana Jyothi 	    44
+E2+TE2 	CB-512 	Kailash Chandra Mishra 	    44
+D1+TD1 	CB-514 	Chirra Venkata Ramireddy 	43
+D1+TD1 	CB-510 	Gayathri Dhara 	            Full
+Lab Slots
+L1+L2 	    CB-301 	TATIREDDY SUBBAREDDY 	69
+L51+L52 	CB-106 	TATIREDDY SUBBAREDDY 	69
+L57+L58 	CB-405 	TATIREDDY SUBBAREDDY 	69
+L55+L56 	CB-101 	Prof.SCOPE Dig Crs Faculty-8 	68
+L29+L30 	CB-417 	Chirra Venkata Ramireddy 67
+L51+L52 	CB-417 	MITHILESH KUMAR DUBEY 	67
+L49+L50 	CB-321 	Selva Kumar S       	66
+L1+L2 	    CB-302 	Ganesh Reddy Karri   	65
+L21+L22 	CB-102 	Adla Padma           	65
+L47+L48 	CB-405 	Guruprakash Jayabalasamy 65
+L29+L30 	CB-416 	Guruprakash Jayabalasamy 64
+L41+L42 	CB-405 	Amgothu Shanthi 	    64
+L53+L54 	CB-405 	Ganji Tejasree      	64
+L25+L26 	CB-419 	Shalini Ramanathan  	63
+L37+L38 	CB-303 	MITHILESH KUMAR DUBEY 	63
+L3+L4   	CB-209 	Kommerla Siva Kumar 	63
+L41+L42 	CB-409 	PRAKASH KUMAR SARANGI 	63
+L13+L14 	CB-209 	Kommerla Siva Kumar 	62
+L23+L24 	CB-405 	Shalini Ramanathan   	62
+L13+L14 	CB-228 	GOSALA BETHANY 	        61
+L27+L28 	CB-416 	Kailash Chandra Mishra 	61
+L5+L6 	    CB-416 	GOSALA BETHANY      	61
+L7+L8 	    CB-105 	Madugula Kiran Kumar 	61
+L11+L12 	CB-307 	Adla Padma 	            60
+L11+L12 	CB-303 	Gayathri Dhara      	58
+L51+L52 	CB-419 	Ganji Tejasree 	        58
+L45+L46 	CB-209 	Amgothu Shanthi     	57
+L9+L10 	    CB-419 	Selva Kumar S       	57
+L31+L32 	CB-228 	MITHILESH KUMAR DUBEY 	56
+L15+L16 	CB-405 	Madugula Kiran Kumar 	55
+L19+L20 	CB-303 	Gayathri Dhara 	        55
+L21+L22 	CB-105 	Kailash Chandra Mishra 	55
+L15+L16 	CB-409 	Ganji Tejasree 	        54
+L33+L34 	CB-101 	Adla Padma 	            54
+L33+L34 	CB-102 	Shalini Ramanathan 	    54
+L35+L36 	CB-301 	GOSALA BETHANY      	53
+L49+L50 	CB-405 	Kailash Chandra Mishra 	51
+L27+L28 	CB-417 	Pujari Jeevana Jyothi 	49
+L31+L32 	CB-301 	Ganesh Reddy Karri 	    49
+L39+L40 	CB-301 	Pujari Jeevana Jyothi 	49
+L43+L44 	CB-202 	PRAKASH KUMAR SARANGI 	49
+L3+L4   	CB-202 	Chirra Venkata Ramireddy 37
+L45+L46 	CB-202 	Kommerla Siva Kumar 	23
+L43+L44 	CB-228 	Pujari Jeevana Jyothi 	22 
+
+Theory of Computation
+B2+TB2+TBB2 	CB-316 	MAHENDRA SAHARE     	69
+A2+TA2+TAA2 	CB-521 	TARUN NARAYAN SHANKAR 	67
+A2+TA2+TAA2 	CB-516 	Sachi Nandan Mohanty 	66
+A2+TA2+TAA2 	CB-520 	Radha Mohan Pattanayak 	66
+A2+TA2+TAA2 	CB-525 	Bommareddy Lokesh   	66
+A2+TA2+TAA2 	CB-527 	Srinivasa Reddy Konda 	66
+B2+TB2+TBB2 	CB-323 	Sudhakar Ilango S   	66
+A1+TA1+TAA1 	CB-513 	TARUN NARAYAN SHANKAR 	65
+A1+TA1+TAA1 	CB-516 	MAHENDRA SAHARE 	    65
+B1+TB1+TBB1 	CB-415 	Sudhakar Ilango S 	    65
+A1+TA1+TAA1 	CB-507 	Sachi Nandan Mohanty 	64
+A1+TA1+TAA1 	CB-519 	Bommareddy Lokesh   	64
+A2+TA2+TAA2 	CB-524 	MAHENDRA SAHARE     	64
+B2+TB2+TBB2 	CB-G13 	Radha Mohan Pattanayak 	64
+B1+TB1+TBB1 	CB-418 	Radha Mohan Pattanayak 	63
+B2+TB2+TBB2 	CB-322 	Saroja Kumar Rout    	63
+A1+TA1+TAA1 	CB-511 	Bolem Sai Chandana   	62
+B1+TB1+TBB1 	CB-425 	Sandipan Maiti      	62
+B2+TB2+TBB2 	CB-G11 	Renita R 	            62
+B2+TB2+TBB2 	CB-318A Sandipan Maiti   	    62
+B1+TB1+TBB1 	CB-327 	Bolem Sai Chandana 	    61
+A1+TA1+TAA1 	CB-512 	Renita R 	            59
+B1+TB1+TBB1 	CB-426 	SANAL KUMAR T S 	    59
+A2+TA2+TAA2 	CB-519 	Bolem Sai Chandana  	58
+B2+TB2+TBB2 	CB-315 	Srinivasarao.Pokuri 	57
+B1+TB1+TBB1 	CB-424 	Renita R 	            52
+A2+TA2+TAA2 	CB-113 	JAWAHAR MUTHUSAMY 	    51
+A2+TA2+TAA2 	CB-523 	Srinivasarao.Pokuri 	49
+B2+TB2+TBB2 	CB-G12 	Vikash Kumar Singh  	49
+B1+TB1+TBB1 	CB-408 	Vikash Kumar Singh 	    48
+A1+TA1+TAA1 	CB-520 	Yamarthi Narasimha Rao 	47
+A1+TA1+TAA1 	CB-510 	SANAL KUMAR T S 	    45
+A1+TA1+TAA1 	CB-514 	Srinivasarao.Pokuri 	44
+A2+TA2+TAA2 	CB-518 	SANAL KUMAR T S     	43
+B2+TB2+TBB2 	CB-319 	SHAIK MOINUDDIN AHMED 	43
+B1+TB1+TBB1 	CB-407 	MOHAMMAD SIRAJUDDIN 	42
+B1+TB1+TBB1 	CB-423 	Saroja Kumar Rout   	36
+A2+TA2+TAA2 	CB-213 	Saroja Kumar Rout   	32
+A1+TA1+TAA1 	CB-521 	JAWAHAR MUTHUSAMY 	    22
+B1+TB1+TBB1 	CB-326 	SHAIK MOINUDDIN AHMED 	21
+A2+TA2+TAA2 	CB-526 	Yamarthi Narasimha Rao 	19
+B2+TB2+TBB2 	CB-318B JAWAHAR MUTHUSAMY      	4
+A1+TA1+TAA1 	CB-518 	Dasari Venkata Lakshmi 	Full
+B1+TB1+TBB1 	CB-422 	Dasari Venkata Lakshmi 	Full
+B2+TB2+TBB2 	CB-317 	Dasari Venkata Lakshmi 	Full
+
+Program Elective
+ML 
+C1+TCC1 ONL00001 Ravindra Dhuli         	688
+F2+TF2	CB-G13 	ALLAM AKSHAYKRANTH      	87
+F2+TF2	CB-G11 	Rajeev Sharma 	            80
+F1+TF1 	CB-G18 	Saladi Saritha 	            77
+C1+TC1 	CB-507 	SIBA PRASAD MISHRA       	76
+F1+TFF1 CB-110 	SIBA PRASAD MISHRA      	76
+F2+TFF2	CB-524 	MIDDE VENKATA SIVA      	76
+F2+TFF2	CB-523 	VENKATA SUBBARAO BALA CHAITANYA DUVVURY 	75
+F1+TF1 	CB-G17 	Ajay Dagar              	74
+F2+TF2	CB-325 	BUDDEPU SANTHOSH KUMAR     	71
+F1+TFF1 CB-111 	Mohit Kumar 	            70
+C2+TCC2 CB-217 	Ravindra Dhuli 	            69
+C1+TC1 	CB-510 	BUDDEPU SANTHOSH KUMAR  	68
+C1+TCC1 CB-110 	Ajay Dagar      	        65
+C1+TC1 	CB-501 	Rajeev Sharma 	            64
+C2+TC2 	CB-429 	BUDDEPU SANTHOSH KUMAR   	64
+C2+TC2 	CB-433 	Saladi Saritha          	64
+C2+TC2 	CB-431 	Mohit Kumar             	63
+C1+TC1 	CB-506 	MIDDE VENKATA SIVA       	62
+C2+TCC2 CB-218 	Ajay Dagar               	62
+F1+TF1 	CB-408 	ALLAM AKSHAYKRANTH 	        62
+C2+TC2 	CB-430 	Yepuganti Karuna        	58
+F1+TF1 	CB-325 	Praveen Maurya          	57
+C2+TC2 	CB-432 	Praveen Maurya          	56
+C2+TC2 	CB-426 	Lakshminarayana Janjanam 	52
+C1+TC1 	CB-505 	VENKATA SUBBARAO BALA CHAITANYA DUVVURY 	49
+F1+TF1 	CB-326 	Yepuganti Karuna 	        49
+F2+TF2	CB-327 	SIBA PRASAD MISHRA 	        49
+F2+TF2	CB-G12 	Neeraj Kumar Misra 	        44
+F1+TF1 	CB-719 	MIDDE VENKATA SIVA 	        33
+F2+TF2	CB-326 	Lakshminarayana Janjanam 	30
+C1+TC1 	CB-504 	Neeraj Kumar Misra 	        Full
+F1+TF1 	CB-327 	Lakshminarayana Janjanam 	Full
+Lab Slots
+L25+L26 	CB-301 	Prof.SENSE Dig Crs Faculty-1 	70
+L25+L26 	CB-106 	Mohit Kumar                 	66
+L1+L2   	CB-307 	ALLAM AKSHAYKRANTH 	            64
+L1+L2   	CB-303 	Prof.SENSE Dig Crs Faculty-1 	62
+L53+L54 	CB-301 	Prof.SENSE Dig Crs Faculty-1 	62
+L3+L4   	CB-405 	Yepuganti Karuna 	            61
+L11+L12 	CB-409 	Yepuganti Karuna 	            60
+L29+L30 	AB2-306 VENKATA SUBBARAO BALA CHAITANYA DUVVURY 	60
+L5+L6   	AB2-114 Kritika Bansal               	59
+L3+L4	    AB2-114 Agam Das Goswami                58
+L47+L48 	CB-307 	Saladi Saritha              	58
+L55+L56 	AB2-114 VENKATA SUBBARAO BALA CHAITANYA DUVVURY 	58
+L5+L6   	CB-405 	Praveen Maurya 	                58
+L11+L12 	CB-405 	Ajay Dagar 	                    57
+L41+L42 	CB-303 	Agam Das Goswami 	            57
+L7+L8   	CB-106 	Rajeev Sharma 	                57
+L45+L46 	CB-102 	Rajeev Sharma 	                56
+L53+L54 	CB-302 	Ravindra Dhuli 	                56
+L7+L8   	CB-301 	Prof.SENSE Dig Crs Faculty-1 	56
+L11+L12 	CB-321 	Neeraj Kumar Misra          	55
+L55+L56 	CB-102 	ALLAM AKSHAYKRANTH          	55
+L55+L56 	AB2-115 Mohit Kumar 	                53
+L15+L16 	AB2-201 Saladi Saritha                	52
+L33+L34 	CB-228 	Ravindra Dhuli              	52
+L47+L48 	CB-303 	Yepuganti Karuna            	51
+L37+L38 	CB-209 	Saladi Saritha               	50
+L39+L40 	CB-303 	ALLAM AKSHAYKRANTH 	            49
+L37+L38 	CB-122 	VENKATA SUBBARAO BALA CHAITANYA DUVVURY 	48
+L41+L42 	CB-307 	Neeraj Kumar Misra           	47
+L15+L16 	AB2-115 Ravindra Dhuli                	45
+L33+L34 	CB-202 	Rajeev Sharma               	41
+L39+L40 	CB-307 	Mohit Kumar                 	40
+L37+L38 	CB-202 	Prof.SENSE Dig Crs Faculty-1 	31
+L29+L30 	CB-209 	Kritika Bansal 	                30
+L45+L46 	CB-105 	Neeraj Kumar Misra          	Full
+
+Introduction to cryptography
+C1+TC1	CB-415 	MOHAMMAD SIRAJUDDIN         	CBL 	52
+C1+TC1	CB-418 	Udit Narayana Kar 	            CBL 	55
+C2+TC2 	CB-326 	INAMPUDI GOVARDHANA RAO     	CBL 	62
+C2+TC2 	CB-327 	Udit Narayana Kar 	            CBL 	60
+F1+TF1 	CB-324 	Saroj Kumar Panigrahy       	CBL 	53
+F1+TFF1 CB-216 	INAMPUDI GOVARDHANA RAO     	CBL 	59
+F2+TF2	CB-324 	Saroj Kumar Panigrahy 	        CBL 	48
+F2+TFF2	CB-526 	MOHAMMAD SIRAJUDDIN 	        CBL 	52
+F1+TF1 	CB-323 	Prof.SCOPE Dig Crs Faculty-11 	CBL 	61 
+C1+TC1	CB-415 	MOHAMMAD SIRAJUDDIN 	        CBL 	52
+C1+TC1	CB-418 	Udit Narayana Kar           	CBL 	55
+C2+TC2 	CB-326 	INAMPUDI GOVARDHANA RAO     	CBL 	62
+C2+TC2 	CB-327 	Udit Narayana Kar 	            CBL 	60
+F1+TF1 	CB-324 	Saroj Kumar Panigrahy 	        CBL 	53
+F1+TFF1 CB-216 	INAMPUDI GOVARDHANA RAO 	    CBL 	59
+F2+TF2	CB-324 	Saroj Kumar Panigrahy 	        CBL 	48
+F2+TFF2	CB-526 	MOHAMMAD SIRAJUDDIN 	        CBL 	52
+F1+TF1 	CB-323 	Prof.SCOPE Dig Crs Faculty-11 	CBL 	61 
+
+Data Warehousing and Data Mining
+D1+TD1	CB-523 	Sheela jayachandran CBL 	20
+D1+TDD1	CB-525 	Soubhagya Sankar Barpanda 	CBL 	42
+D2+TD2	CB-518 	Soubhagya Sankar Barpanda 	CBL 	35
+D2+TD2	CB-519 	P. Kuppusamy 	    CBL 	45
+D2+TDD2	CB-523 	Sheela jayachandran CBL 	56
+E1+TE1 	CB-504 	G. Deepthi      	CBL 	0
+E1+TE1 	CB-505 	Soubhagya Sankar Barpanda 	CBL 	32
+E1+TE1 	CB-506 	P. Kuppusamy 	    CBL 	0
+E2+TE2	CB-518 	Sheela jayachandran CBL 	0
+E2+TE2	CB-520 	P. Kuppusamy 	    CBL 	0
+D1+TD1	CB-524 	Paidipogu Sowjanya 	CBL 	12
+E2+TE2	CB-519 	Paidipogu Sowjanya 	CBL 	26 
+
+Foundation for data analytics
+C2+TCC2 	CB-114 	Prashanth Rajam     	51
+F1+TF1   	CB-322 	RUPA CHIRAMDASU     	46
+F1+TFF1 	CB-109 	Palacharla Ravi Kumar 	44
+F2+TF2  	CB-322 	RUPA CHIRAMDASU     	43
+F2+TFF2 	CB-527 	Debasis Dwibedy 	    42
+C1+TC1  	CB-408 	MOHD IRFAN 	            40
+C2+TC2  	CB-524 	Palacharla Ravi Kumar 	35
+F2+TF2  	CB-319 	Prashanth Rajam 	    35
+C1+TCC1 	CB-216 	Lalitha Kumari P 	    32
+C1+TC1  	CB-524 	Prashanth Rajam     	31
+F1+TF1 	    CB-425 	Voddelli SriLakshmi 	24
+C2+TC2  	CB-325 	Lalitha Kumari P    	12
+C1+TC1  	CB-407 	Palacharla Ravi Kumar 	Full
+F1+TF1  	CB-319 	Lalitha Kumari P    	Full
+F2+TF2  	CB-323 	Naga Jagadesh Bommagani Full
+Lab Slots
+L51+L52 	CB-405 	Palacharla Ravi Kumar 	44
+L5+L6   	CB-121 	RUPA CHIRAMDASU     	44
+L1+L2   	CB-209 	RUPA CHIRAMDASU        	41
+L39+L40 	CB-122 	MOHD IRFAN 	41
+L29+L30 	CB-405 	Palacharla Ravi Kumar 	40
+L37+L38 	CB-405 	Palacharla Ravi Kumar 	36
+L23+L24 	CB-417 	Debasis Dwibedy 	    30
+L11+L12 	CB-102 	Prashanth Rajam 	    26
+L15+L16 	CB-228 	Prashanth Rajam 	    25
+L45+L46 	CB-409 	Prashanth Rajam 	    23
+L33+L34 	CB-307 	Voddelli SriLakshmi 	22
+L37+L38	    CB-321 	Lalitha Kumari P 	    16
+L41+L42 	CB-416 	Naga Jagadesh Bommagani 16
+L15+L16	    CB-209 	Lalitha Kumari P 	    10
+L55+L56 	CB-307 	Lalitha Kumari P 	    Full
+
+Foundations of Blockchain
+C2+TCC2 	CB-214 	Naresh Sammeta  	26
+G2+TG2	CB-215 	HARAPRIYA KAR       	25
+C1+TC1	CB-422 	PARITALA JHANSIRANI 	19 
+
+Requirements Engineering Management
+F1+TF1 	CB-318A 	Prof.SCOPE Dig Crs Faculty-12 	36
+
+Agile Developement Process
+A2+TA2	CB-326 	Khasim Syed 	            27
+A2+TA2	CB-327 	Annapureddy V N Reddy 	    25
+D2+TDD2	CB-G14 	Khasim Syed             	23
+A1+TA1	CB-524 	KANHAIYA SHARMA         	2
+D1+TDD1	CB-501 	Annapureddy V N Reddy   	1
+D2+TD2	CB-432 	KANHAIYA SHARMA 	        1
+A1+TA1	CB-523 	Khasim Syed 	            Full
+D1+TD1	CB-433 	Guruprakash Jayabalasamy 	Full
+D2+TD2	CB-433 	Bommareddy Lokesh 	        Full
+
+Distributed Systems
+C2+TC2 	CB-424 	Gayathri Dhara 	15 
+
+DevOps
+C1+TC1 	CB-511 	K Aravind           	CBL 	66
+C1+TC1 	CB-512 	S.Bharath Bhushan   	CBL 	68
+C1+TC1 	CB-513 	Rajesh Duvvuru      	CBL 	67
+C1+TC1 	CB-514 	KAMEPALLI S L PRASANNA 	CBL 	69
+C1+TCC1 CB-113 	Kandru Lakshmi Sai Praneeth 	CBL 	69
+C2+TC2 	CB-501 	S.Bharath Bhushan 	    CBL 	68
+C2+TC2 	CB-504 	KAMEPALLI S L PRASANNA 	CBL 	70
+C2+TC2 	CB-505 	MANIMUTHU A         	CBL 	70
+C2+TC2 	CB-506 	Madala Guru Brahmam 	CBL 	70
+C2+TCC2 CB-219 	K Aravind           	CBL 	70
+E1+TE1	CB-412 	K Aravind 	            CBL 	49
+E1+TE1	CB-413 	S.Bharath Bhushan 	    CBL 	48
+E1+TE1	CB-415 	MANIMUTHU A 	        CBL 	70
+E1+TE1	CB-418 	Madala Guru Brahmam 	CBL 	70
+E2+TE2	CB-430 	MANIMUTHU A 	        CBL 	70
+E2+TE2	CB-431 	KAMEPALLI S L PRASANNA 	CBL 	68
+E2+TE2	CB-432 	Madala Guru Brahmam 	CBL 	68
+E2+TE2	CB-433 	Kandru Lakshmi Sai Praneeth 	CBL 	70 
+L29+L30 CB-419 	S.Bharath Bhushan 	    LBC 	69
+L37+L38	CB-228 	S.Bharath Bhushan   	LBC 	65
+L1+L2	CB-321 	KAMEPALLI S L PRASANNA 	LBC 	70
+L11+L12	CB-416 	KAMEPALLI S L PRASANNA 	LBC 	70
+L31+L32	CB-302 	KAMEPALLI S L PRASANNA 	LBC 	69
+L15+L16	CB-417 	Madala Guru Brahmam 	LBC 	70
+L51+L52 CB-102 	S.Bharath Bhushan   	LBC 	67
+L19+L20	CB-228 	MANIMUTHU A         	LBC 	65
+L21+L22	CB-405 	K Aravind           	LBC 	68
+L23+L24	CB-307 	Kandru Lakshmi Sai Praneeth 	LBC 	69
+L27+L28	CB-405 	MANIMUTHU A         	LBC 	70
+L33+L34 CB-121 	Kandru Lakshmi Sai Praneeth 	LBC 	63
+L41+L42 CB-321 	Rajesh Duvvuru      	LBC 	65
+L55+L56 CB-416 	K Aravind 	            LBC 	65
+L53+L54 CB-307 	K Aravind 	            LBC 	67
+L51+L52 CB-105 	MANIMUTHU A 	        LBC 	69
+L5+L6	CB-307 	Madala Guru Brahmam 	LBC 	70
+L45+L46 CB-121 	Madala Guru Brahmam 	LBC 	62 
+
+Network Security
+E1+TE1  	CB-322 	Venkata Bhikshapathi Chenam 68
+E2+TE2  	CB-408 	Venkata Bhikshapathi Chenam 67
+E2+TE2  	CB-415 	Shalini Subramani       	67
+F1+TF1  	CB-415 	Venkata Bhikshapathi Chenam 67
+F2+TF2  	CB-407 	TARUN NARAYAN SHANKAR 	    67
+E2+TE2  	CB-418 	Azees Maria John Francis 	66
+E1+TE1  	CB-323 	THANGAM SIVANANTHAM 	    65
+E1+TE1	    CB-324 	Azees Maria John Francis 	63
+F1+TFF1 	CB-215 	THANGAM SIVANANTHAM 	    63
+F2+TFF2 	CB-525 	Varunkumar Anantharaman 	63
+F1+TF1 	    CB-418 	Shalini Subramani       	62
+F2+TF2  	CB-408 	Shalini Subramani 	        57
+Lab Slots
+L3+L4   	CB-301 	Venkata Bhikshapathi Chenam 69
+L27+L28 	CB-409 	Azees Maria John Francis 	67
+L19+L20 	CB-301 	TARUN NARAYAN SHANKAR   	66
+L45+L46 	CB-122 	Venkata Bhikshapathi Chenam 66
+L11+L12 	CB-417 	Shalini Subramani       	65
+L43+L44 	CB-303 	THANGAM SIVANANTHAM     	65
+L33+L34 	CB-105 	THANGAM SIVANANTHAM        	64
+L35+L36 	CB-303 	Shalini Subramani        	63
+L5+L6   	CB-419 	Shalini Subramani 	        63
+L15+L16 	CB-416 	Venkata Bhikshapathi Chenam 61
+L37+L38 	CB-301 	Varunkumar Anantharaman 	61
+L49+L50 	CB-303 	Azees Maria John Francis 	61 
+
+university core
+French
+D2	AB1-G11 	RITESH RANJAN 	47
+D2	AB1-G10 	Dheeraj Kumar 	45
+G1	CB-107 	    Dheeraj Kumar 	33
+D2	AB1-101 	Chandan Vishwas 13
+B1	CB-113 	    Chandan Vishwas Full
+C1	AB2-118 	RITESH RANJAN 	Full
+D1	AB2-G14 	RITESH RANJAN 	Full
+F1 	CB-114 	    Dheeraj Kumar 	Full
+
+Basic Spanish
+F2	CB-113 	HALAVATH RAJESH     	63
+G2 	CB-111 	Rafael Gonzalez Macho 	59
+G2 	CB-112 	HALAVATH RAJESH        	57
+E2	CB-G15 	Anindita Roy 	        31
+A2	CB-112 	Anindita Roy 	        30
+F2	CB-114 	Anindita Roy 	        29
+A1	AB2-G17 Rafael Gonzalez Macho 	15
+F1 	CB-113 	Rafael Gonzalez Macho 	7 
+
+Korean
+E2	CB-G14 	Naveen Kumar Ranjan 	56 
+
+German
+B2	CB-G18	VELMALA SHARATH KUMAR	    CBL	1
+C1  AB2-G17	CHARU WALIYAN	            CBL	0
+C2	AB2-G17	Renuprasad Hemkiran Patki	CBL	1
+D1  CB-111	VELMALA SHARATH KUMAR   	CBL	15
+D2  CB-107	CHARU WALIYAN	            CBL	27
+E1	CB-G17	VELMALA SHARATH KUMAR   	CBL	53
+E1	CB-G18	CHARU WALIYAN	            CBL	36
+G1  CB-114	Renuprasad Hemkiran Patki	CBL	50

@@ -11,3 +11,4 @@ fastapi
 uvicorn
 python-multipart
 pillow
+open3d

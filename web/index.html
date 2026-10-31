@@ -222,6 +222,7 @@
   <div class="tools" id="tools" hidden>
     <button id="resetView" title="Back to the starting view">Reset</button>
     <button id="topView" title="Look straight down at the floor plan">Top</button>
+    <button id="tourBtn" title="Replay the walk path the camera took while filming" hidden>Tour</button>
     <button id="walkBtn" class="shiny" title="Walk through the room in first person">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="3" r="1.6"/><path d="M8 5v4m0 0-2.5 4M8 9l2.5 4M5 7h6"/></svg>
       Walk
@@ -265,6 +266,7 @@
   <section class="pane" data-pane="view" hidden>
     <fieldset>
       <legend>Show</legend>
+      <label class="check"><input type="checkbox" id="L-mesh" checked> Surface mesh</label>
       <label class="check"><input type="checkbox" id="L-points" checked> Point cloud</label>
       <label class="check"><input type="checkbox" id="L-walls" checked> Walls</label>
       <label class="check"><input type="checkbox" id="L-floor" checked> Floor</label>
@@ -293,6 +295,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -319,7 +322,7 @@ scene.add(sun);
 const grid = new THREE.GridHelper(30, 60, 0xb9beb9, 0xc9cdc9);
 scene.add(grid);
 
-const LAYERS = ['points', 'walls', 'floor', 'ceiling', 'objects', 'cams'];
+const LAYERS = ['mesh', 'points', 'walls', 'floor', 'ceiling', 'objects', 'cams'];
 const layers = Object.fromEntries(LAYERS.map((k) => { const g = new THREE.Group(); scene.add(g); return [k, g]; }));
 
 const marker = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12),
@@ -354,7 +357,8 @@ const walk = (() => {
   const keys = new Set();
   const euler = new THREE.Euler(0, 0, 0, 'YXZ');
   const fwd = new THREE.Vector3();
-  const state = { active: false, col: null, ceil: 3 };
+  const TOUR_SPEED = 0.9, PATH_STEP = 0.1;   // m/s; metres between walk_path samples
+  const state = { active: false, col: null, ceil: 3, path: [], tour: false, tourAt: 0 };
   const dom = renderer.domElement;
   let dragging = false, px = 0, py = 0;
 
@@ -364,12 +368,13 @@ const walk = (() => {
   addEventListener('keydown', (e) => {
     if (!state.active) return;
     if (e.code === 'Escape') return exit();
-    const k = code(e); if (k) { keys.add(k); e.preventDefault(); }
+    const k = code(e); if (k) { keys.add(k); state.tour = false; $('tourBtn').classList.remove('on'); e.preventDefault(); }
   });
   addEventListener('keyup', (e) => { const k = code(e); if (k) keys.delete(k); });
 
   dom.addEventListener('pointerdown', (e) => {
     if (!state.active) return;
+    state.tour = false; $('tourBtn').classList.remove('on');
     dragging = true; px = e.clientX; py = e.clientY; dom.setPointerCapture(e.pointerId);
   });
   dom.addEventListener('pointermove', (e) => {
@@ -402,8 +407,22 @@ const walk = (() => {
     return [x, z];
   }
 
+  const tp = new THREE.Vector3(), td = new THREE.Vector3();
+  function tourStep(dt) {
+    const last = state.path.length - 1;
+    state.tourAt = Math.min(last, state.tourAt + TOUR_SPEED * dt / PATH_STEP);
+    const i = Math.min(Math.floor(state.tourAt), last - 1), f = state.tourAt - i;
+    const a = state.path[i], b = state.path[i + 1];
+    tp.set(...a.pos).lerp(tp.clone().set(...b.pos), f);
+    td.set(...a.dir).lerp(td.clone().set(...b.dir), f);
+    camera.position.copy(tp);
+    camera.lookAt(tp.x + td.x, tp.y + td.y, tp.z + td.z);
+    if (state.tourAt >= last) { state.tour = false; $('tourBtn').classList.remove('on'); }
+  }
+
   state.step = (dt) => {
-    const v = SPEED * (keys.has('s') ? SPRINT : 1) * dt;
+    if (state.tour) return tourStep(dt);
+    const v =SPEED * (keys.has('s') ? SPRINT : 1) * dt;
     camera.getWorldDirection(fwd); fwd.y = 0;
     if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, -1);
     fwd.normalize();
@@ -424,26 +443,37 @@ const walk = (() => {
 
   function exit() {
     if (!state.active) return;
-    state.active = false; dragging = false; keys.clear();
+    state.active = false; state.tour = false; dragging = false; keys.clear();
+    $('tourBtn').classList.remove('on');
     controls.enabled = true;
     $('walkHud').hidden = true; document.body.classList.remove('walking');
     $('walkBtn').classList.remove('on');
     controls.target.copy(camera.position).add(camera.getWorldDirection(fwd).multiplyScalar(2));
   }
   state.exit = exit;
-  state.setScene = (c) => { state.col = c; state.ceil = c.ceil; };
-  state.enter = () => {
+  state.setScene = (c) => { state.col = c; state.ceil = c.ceil; state.path = c.path || []; };
+  state.enter = (tour = false) => {
     if (!currentScan) return;
-    const t = home ? home.target : new THREE.Vector3();
-    camera.position.set(t.x, EYE, t.z);
-    camera.lookAt(t.x, EYE, t.z - 1);
+    const p0 = state.path[0];
+    if (p0) {
+      // start where the filmer started, facing the way they faced
+      camera.position.set(p0.pos[0], EYE, p0.pos[2]);
+      camera.lookAt(p0.pos[0] + p0.dir[0], EYE, p0.pos[2] + p0.dir[2]);
+    } else {
+      const t = home ? home.target : new THREE.Vector3();
+      camera.position.set(t.x, EYE, t.z);
+      camera.lookAt(t.x, EYE, t.z - 1);
+    }
     state.active = true; controls.enabled = false;
+    state.tour = tour && state.path.length > 1; state.tourAt = 0;
+    $('tourBtn').classList.toggle('on', state.tour);
     $('walkHud').hidden = false; document.body.classList.add('walking');
     $('walkBtn').classList.add('on');
   };
   return state;
 })();
 $('walkBtn').onclick = () => (walk.active ? walk.exit() : walk.enter());
+$('tourBtn').onclick = () => { if (walk.active) walk.exit(); walk.enter(true); };
 
 // Muted, distinguishable box colours; same label always gets the same colour.
 const PALETTE = ['#c8553d', '#2f6f8f', '#7a9a3a', '#b58a2a', '#6a4c93', '#3d8c7a', '#a34a6b', '#5b6770', '#d08a3e', '#3f5fa8'];
@@ -492,6 +522,19 @@ async function openScan(job) {
   g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(buf, 4, n * 3), 3));
   g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(buf, 4 + n * 12, n * 3), 3, true));
   layers.points.add(new THREE.Points(g, new THREE.PointsMaterial({ size: $('psize').value / 100, vertexColors: true })));
+
+  // Solid surface when the scan has one; the point cloud is then hidden by default.
+  const hasMesh = !!sc.mesh;
+  $('L-mesh').disabled = !hasMesh;
+  $('L-mesh').checked = hasMesh;
+  $('L-points').checked = !hasMesh;
+  if (hasMesh) {
+    try {
+      const geo = await new PLYLoader().loadAsync(`/results/${encodeURIComponent(job.id)}/${sc.mesh}`);
+      if (token !== loadToken) return;
+      layers.mesh.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
+    } catch { toast('The surface mesh could not be loaded; showing points.', true); $('L-mesh').checked = false; $('L-points').checked = true; }
+  }
 
   const fe = sc.floor_extent;
   const fw = fe.max[0] - fe.min[0], fd = fe.max[1] - fe.min[1];
@@ -547,14 +590,18 @@ async function openScan(job) {
   $('cutsEmpty').textContent = 'No furniture was recognised in this scan.';
   $('objCount').textContent = rows.length ? ` ${rows.length}` : '';
 
-  if (sc.cameras?.length) {
-    const pts = sc.cameras.map((c) => new THREE.Vector3(...c.pos));
+  // older scans have no walk_path; fall back to the raw per-frame camera poses
+  const path = sc.walk_path?.points?.length ? sc.walk_path.points : (sc.cameras || []);
+  $('tourBtn').hidden = path.length < 2;
+  if (path.length) {
+    const pts = path.map((c) => new THREE.Vector3(...c.pos));
     layers.cams.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xd2402e })));
   }
 
   walk.setScene({
     minx: fe.min[0], maxx: fe.max[0], minz: fe.min[1], maxz: fe.max[1], ceil: sc.ceiling_height,
     walls: sc.walls.map((w) => ({ x1: w.x1, z1: w.z1, x2: w.x2, z2: w.z2 })),
+    path,
   });
 
   applyToggles();
@@ -650,7 +697,8 @@ function selectTab(name) {
 // ================================================================ scans list + polling
 let jobs = [];
 const STAGES = { frames: ['Reading frames', .05], poses: ['Placing cameras', .15], depth: ['Measuring depth', .45],
-  fusion: ['Building point cloud', .05], walls: ['Finding walls', .02], objects: ['Finding furniture', .28] };
+  fusion: ['Building point cloud', .05], walls: ['Finding walls', .02], objects: ['Finding furniture', .23],
+  mesh: ['Building surface mesh', .05] };
 function jobFraction(j) {
   let acc = 0;
   for (const [k, [, w]] of Object.entries(STAGES)) {

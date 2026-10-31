@@ -12,6 +12,10 @@ SHARPNESS_POOL = 3
 FRAME_LONG_SIDE = 900
 FUSE_VOXEL = 0.025
 
+MESH_RES = 320             # TSDF cells per side of the room-sized cube (~2-3 cm for a normal room)
+MESH_MAX_DEPTH = 6.0
+MESH_MAX_TRIS = 250_000
+
 Progress = Callable[[str, float], None]
 
 # YOLOE class name -> canonical label; synonyms collapse so one object = one box.
