@@ -58,7 +58,7 @@ def process(video, out, progress: Progress | None = None) -> dict:
 
     mesh_info = None
     try:
-        mesh_info = build_mesh(frames, T, P, ceil, out / "mesh.ply", progress)
+        mesh_info = build_mesh(frames, T, P, ceil, walls, out / "mesh.ply", progress)
     except Exception as e:          # the point cloud is still a usable result
         print(f"mesh step failed: {e}")
 

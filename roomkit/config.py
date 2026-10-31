@@ -15,6 +15,7 @@ FUSE_VOXEL = 0.025
 MESH_RES = 320             # TSDF cells per side of the room-sized cube (~2-3 cm for a normal room)
 MESH_MAX_DEPTH = 6.0
 MESH_MAX_TRIS = 250_000
+SNAP_TOL = 0.15            # metres: mesh within this of a floor/wall/ceiling plane is flattened onto it
 
 Progress = Callable[[str, float], None]
 
