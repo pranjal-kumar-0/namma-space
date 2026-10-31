@@ -68,6 +68,7 @@ def process(video, out, progress: Progress | None = None) -> dict:
     scene = write_outputs(out, P, C, walls, ceil, boxes, cams, yaw)
     scene["walk_path"] = build_walk_path(cams)
     scene["mesh"] = "mesh.ply" if mesh_info else None
+    scene["mesh_textured"] = bool(mesh_info and mesh_info["textured"])
     scene["stats"] = {"frames": len(imgs), "posed": len(frames), "points": int(len(P))}
     (out / "scene.json").write_text(json.dumps(scene, indent=1))
     reset_caches()

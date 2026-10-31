@@ -492,6 +492,21 @@ function clearScene() {
 let currentScan = null, home = null, loadToken = 0;
 const boxByIndex = [];
 
+// mesh.bin: u32 vertices, u32 indices, f32 xyz*n, f32 uv*n, u32 index*m; mesh.jpg is the texture atlas
+async function loadTexturedMesh(base) {
+  const [buf, tex] = await Promise.all([
+    fetch(base + 'mesh.bin').then(r => { if (!r.ok) throw new Error(); return r.arrayBuffer(); }),
+    new THREE.TextureLoader().loadAsync(base + 'mesh.jpg')]);
+  const [nv, ni] = new Uint32Array(buf, 0, 2);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(buf, 8, nv * 3), 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(buf, 8 + nv * 12, nv * 2), 2));
+  g.setIndex(new THREE.BufferAttribute(new Uint32Array(buf, 8 + nv * 20, ni), 1));
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+}
+
 async function openScan(job) {
   const token = ++loadToken;
   currentScan = job.id;
@@ -530,9 +545,17 @@ async function openScan(job) {
   $('L-points').checked = !hasMesh;
   if (hasMesh) {
     try {
-      const geo = await new PLYLoader().loadAsync(`/results/${encodeURIComponent(job.id)}/${sc.mesh}`);
+      const base = `/results/${encodeURIComponent(job.id)}/`;
+      let mesh = null;
+      if (sc.mesh_textured) {
+        try { mesh = await loadTexturedMesh(base); } catch { /* fall back to the vertex-coloured mesh */ }
+      }
+      if (!mesh) {
+        const geo = await new PLYLoader().loadAsync(base + sc.mesh);
+        mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+      }
       if (token !== loadToken) return;
-      layers.mesh.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
+      layers.mesh.add(mesh);
     } catch { toast('The surface mesh could not be loaded; showing points.', true); $('L-mesh').checked = false; $('L-points').checked = true; }
   }
 
@@ -697,8 +720,8 @@ function selectTab(name) {
 // ================================================================ scans list + polling
 let jobs = [];
 const STAGES = { frames: ['Reading frames', .05], poses: ['Placing cameras', .15], depth: ['Measuring depth', .45],
-  fusion: ['Building point cloud', .05], walls: ['Finding walls', .02], objects: ['Finding furniture', .23],
-  mesh: ['Building surface mesh', .05] };
+  fusion: ['Building point cloud', .05], walls: ['Finding walls', .02], objects: ['Finding furniture', .20],
+  mesh: ['Building surface mesh', .05], texture: ['Baking texture', .03] };
 function jobFraction(j) {
   let acc = 0;
   for (const [k, [, w]] of Object.entries(STAGES)) {

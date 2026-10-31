@@ -8,6 +8,7 @@ import numpy as np
 from .config import MESH_MAX_DEPTH, MESH_MAX_TRIS, MESH_RES, SNAP_TOL, Progress
 from .frame import Frame
 from .fusion import flying_pixel_mask
+from .texture import bake_texture
 
 
 def snap_to_planes(V: np.ndarray, N: np.ndarray, walls: list[dict], ceiling: float,
@@ -92,5 +93,11 @@ def build_mesh(frames: list[Frame], T: np.ndarray, P: np.ndarray, ceiling: float
         raise RuntimeError("depth fusion produced an empty mesh")
 
     o3d.io.write_triangle_mesh(str(path), mesh, write_ascii=False, write_vertex_normals=False)
+    info = {"triangles": len(mesh.triangles), "vertices": len(mesh.vertices), "textured": False}
     progress("mesh", 1)
-    return {"triangles": len(mesh.triangles), "vertices": len(mesh.vertices)}
+    try:
+        bake_texture(mesh, frames, T, path.parent, progress)
+        info["textured"] = True
+    except Exception as e:          # the vertex-coloured mesh is still a usable result
+        print(f"texture bake failed: {e}")
+    return info
