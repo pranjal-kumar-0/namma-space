@@ -2,6 +2,8 @@
 
 Room: 5.0 x 4.0 m, 2.6 m high, x in [0,5], z in [0,4], floor y=0.
 Boxes: "bed" 2.0x0.5x1.6 at x[0.3,2.3] z[0.3,1.9]; "table" 1.2x0.75x0.8 at x[3.2,4.4] z[2.6,3.4].
+
+meow meow meow
 """
 import subprocess
 import sys
