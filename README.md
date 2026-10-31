@@ -53,7 +53,7 @@ path), and press **Walk** to drop into first-person free-roam:
 
 - `W A S D` / arrow keys to move, **drag the mouse** to look around
 - `Space` / `Ctrl` to change height, `Esc` to exit
-- walls block you and keep you inside the room
+- walls block you, but you can step out of the room through doorways and gaps
 
 ## 5. Outputs
 

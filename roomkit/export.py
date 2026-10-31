@@ -3,6 +3,8 @@ from pathlib import Path
 
 import numpy as np
 
+from .walls import find_openings
+
 
 def write_ply(path: Path, P: np.ndarray, rgb: np.ndarray):
     with open(path, "wb") as fh:
@@ -30,6 +32,7 @@ def write_outputs(out: Path, P, C, walls, ceiling, boxes, cams, room_yaw) -> dic
         fh.write(rgb.tobytes())
     write_ply(out / "points.ply", P, rgb)
 
+    find_openings(P, walls, ceiling)       # doorways: walk-mode lets you through these
     xz = P[:, [0, 2]]
     scene = {
         "units": "meters",

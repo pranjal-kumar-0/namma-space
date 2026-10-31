@@ -354,7 +354,7 @@ renderer.setAnimationLoop(() => {
 // ================================================================ first-person walk
 // Drag-to-look + WASD, with collision against walls, furniture and the floor bounds.
 const walk = (() => {
-  const EYE = 1.6, SPEED = 1.7, SPRINT = 1.8, RADIUS = 0.3, SENS = 0.0024;
+  const EYE = 1.6, SPEED = 1.7, SPRINT = 1.8, RADIUS = 0.15, SENS = 0.0024, OUTSIDE = 4;
   const keys = new Set();
   const euler = new THREE.Euler(0, 0, 0, 'YXZ');
   const fwd = new THREE.Vector3();
@@ -398,8 +398,9 @@ const walk = (() => {
   }
   function resolve(x, z) {
     const c = state.col; if (!c) return [x, z];
-    x = Math.min(c.maxx - RADIUS, Math.max(c.minx + RADIUS, x));
-    z = Math.min(c.maxz - RADIUS, Math.max(c.minz + RADIUS, z));
+    // a slim body fits through doorways; the outer limit only stops you wandering off into the void
+    x = Math.min(c.maxx + OUTSIDE, Math.max(c.minx - OUTSIDE, x));
+    z = Math.min(c.maxz + OUTSIDE, Math.max(c.minz - OUTSIDE, z));
     for (const w of c.walls) {
       const [nx, nz] = segDist(x, z, w);
       const dx = x - nx, dz = z - nz, d = Math.hypot(dx, dz);
@@ -481,8 +482,11 @@ const PALETTE = ['#c8553d', '#2f6f8f', '#7a9a3a', '#b58a2a', '#6a4c93', '#3d8c7a
 const FIXED = { bed: 0, sofa: 3, chair: 2, table: 8, desk: 4, cabinet: 1, bookshelf: 6, tv: 9, door: 7, window: 5 };
 const colorFor = (l) => PALETTE[FIXED[l] ?? [...l].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % PALETTE.length];
 
-function clearScene() {
-  for (const g of Object.values(layers)) {
+let pointsFor = null;                     // which scan's cloud is in layers.points
+function clearScene(keepPoints = false) {
+  if (!keepPoints) pointsFor = null;
+  for (const [k, g] of Object.entries(layers)) {
+    if (keepPoints && k === 'points') continue;
     for (const o of [...g.children]) {
       o.traverse((x) => { x.geometry?.dispose(); x.material?.dispose?.(); if (x.isCSS2DObject) x.element.remove(); });
       g.remove(o);
@@ -491,6 +495,20 @@ function clearScene() {
 }
 
 let currentScan = null, home = null, loadToken = 0;
+
+// points.bin: u32 count, f32 xyz*n, u8 rgb*n. Only fetched when the cloud is actually shown.
+async function loadPoints(id, token) {
+  const buf = await fetch(`/results/${encodeURIComponent(id)}/points.bin`)
+    .then((r) => { if (!r.ok) throw r; return r.arrayBuffer(); });
+  if (token !== loadToken) return;
+  for (const o of [...layers.points.children]) { o.geometry.dispose(); o.material.dispose(); layers.points.remove(o); }
+  const n = new Uint32Array(buf, 0, 1)[0];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(buf, 4, n * 3), 3));
+  g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(buf, 4 + n * 12, n * 3), 3, true));
+  layers.points.add(new THREE.Points(g, new THREE.PointsMaterial({ size: $('psize').value / 100, vertexColors: true })));
+  pointsFor = id;
+}
 const boxByIndex = [];
 
 // mesh.bin: u32 vertices, u32 indices, f32 xyz*n, f32 uv*n, u32 index*m; mesh.jpg is the texture atlas
@@ -522,6 +540,21 @@ async function loadModel(url, offsetY) {
   return root;
 }
 
+// Walls minus their doorways (w.openings: [t0, t1] metres along the wall), as plain segments.
+function wallPieces(walls) {
+  const out = [];
+  for (const w of walls) {
+    const dx = w.x2 - w.x1, dz = w.z2 - w.z1, L = Math.hypot(dx, dz) || 1;
+    let t = 0;
+    const at = (s) => [w.x1 + dx * s / L, w.z1 + dz * s / L];
+    for (const [a, b] of [...(w.openings || []), [L, L]].sort((p, q) => p[0] - q[0])) {
+      if (a - t > 0.02) { const [x1, z1] = at(t), [x2, z2] = at(a); out.push({ ...w, x1, z1, x2, z2 }); }
+      t = Math.max(t, b);
+    }
+  }
+  return out;
+}
+
 async function openScan(job) {
   const token = ++loadToken;
   currentScan = job.id;
@@ -530,38 +563,23 @@ async function openScan(job) {
   $('current').textContent = job.name || job.id;
   $('loadingText').textContent = `Loading ${job.name || job.id}…`;
   $('loading').hidden = false;
-  let sc, buf;
+  const base = `/results/${encodeURIComponent(job.id)}/`;
+  let sc;
   try {
-    [sc, buf] = await Promise.all([
-      fetch(`/results/${encodeURIComponent(job.id)}/scene.json`).then((r) => { if (!r.ok) throw r; return r.json(); }),
-      fetch(`/results/${encodeURIComponent(job.id)}/points.bin`).then((r) => { if (!r.ok) throw r; return r.arrayBuffer(); }),
-    ]);
+    sc = await fetch(base + 'scene.json').then((r) => { if (!r.ok) throw r; return r.json(); });
   } catch {
     if (token === loadToken) { $('loading').hidden = true; toast('This scan’s files could not be loaded. It may have been deleted.', true); }
     return;
   }
   if (token !== loadToken) return;
-  $('loading').hidden = true;
-  clearScene();
-  boxByIndex.length = 0;
-  $('empty').hidden = true;
-  $('tools').hidden = false;
 
-  const n = new Uint32Array(buf, 0, 1)[0];
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(buf, 4, n * 3), 3));
-  g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(buf, 4 + n * 12, n * 3), 3, true));
-  layers.points.add(new THREE.Points(g, new THREE.PointsMaterial({ size: $('psize').value / 100, vertexColors: true })));
-
-  // Solid surface when the scan has one; the point cloud is then hidden by default.
+  // Solid surface when the scan has one. The point cloud is then not shown, or even downloaded,
+  // until someone ticks it; the loading screen stays up until the surface is ready.
   const hasMesh = !!(sc.mesh || sc.model);
-  $('L-mesh').disabled = !hasMesh;
-  $('L-mesh').checked = hasMesh;
-  $('L-points').checked = !hasMesh;
+  let mesh = null;
   if (hasMesh) {
+    $('loadingText').textContent = `Loading ${job.name || job.id} mesh…`;
     try {
-      const base = `/results/${encodeURIComponent(job.id)}/`;
-      let mesh = null;
       if (sc.model) mesh = await loadModel(base + sc.model.file, sc.model.offset_y || 0);
       else if (sc.mesh_textured) {
         try { mesh = await loadTexturedMesh(base); } catch { /* fall back to the vertex-coloured mesh */ }
@@ -570,10 +588,26 @@ async function openScan(job) {
         const geo = await new PLYLoader().loadAsync(base + sc.mesh);
         mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
       }
-      if (token !== loadToken) return;
-      layers.mesh.add(mesh);
-    } catch { toast('The surface mesh could not be loaded; showing points.', true); $('L-mesh').checked = false; $('L-points').checked = true; }
+    } catch { mesh = null; }
+    if (token !== loadToken) return;
   }
+  if (!mesh) {
+    try { await loadPoints(job.id, token); } catch {
+      if (token === loadToken) { $('loading').hidden = true; toast('This scan’s files could not be loaded. It may have been deleted.', true); }
+      return;
+    }
+    if (token !== loadToken) return;
+    if (hasMesh) toast('The surface mesh could not be loaded; showing points.', true);
+  }
+  $('loading').hidden = true;
+  clearScene(!mesh);                       // keep the points we just loaded when there's no mesh
+  boxByIndex.length = 0;
+  $('empty').hidden = true;
+  $('tools').hidden = false;
+  if (mesh) layers.mesh.add(mesh);
+  $('L-mesh').disabled = !mesh;
+  $('L-mesh').checked = !!mesh;
+  $('L-points').checked = !mesh;
 
   const fe = sc.floor_extent;
   const fw = fe.max[0] - fe.min[0], fd = fe.max[1] - fe.min[1];
@@ -593,7 +627,8 @@ async function openScan(job) {
 
   const wallMat = new THREE.MeshStandardMaterial({ color: 0xf3f4f2, transparent: true, opacity: $('wop').value / 100,
     depthWrite: false, side: THREE.DoubleSide });
-  for (const w of sc.walls) {
+  const pieces = wallPieces(sc.walls);
+  for (const w of pieces) {
     const dx = w.x2 - w.x1, dz = w.z2 - w.z1, L = Math.hypot(dx, dz);
     const m = new THREE.Mesh(new THREE.BoxGeometry(L, w.height, 0.08), wallMat);
     m.position.set((w.x1 + w.x2) / 2, w.height / 2, (w.z1 + w.z2) / 2);
@@ -639,7 +674,7 @@ async function openScan(job) {
 
   walk.setScene({
     minx: fe.min[0], maxx: fe.max[0], minz: fe.min[1], maxz: fe.max[1], ceil: sc.ceiling_height,
-    walls: sc.walls.map((w) => ({ x1: w.x1, z1: w.z1, x2: w.x2, z2: w.z2 })),
+    walls: pieces.map((w) => ({ x1: w.x1, z1: w.z1, x2: w.x2, z2: w.z2 })),
     path,
   });
 
@@ -673,6 +708,9 @@ $('topView').onclick = () => {
 
 function applyToggles() {
   for (const k of LAYERS) layers[k].visible = $('L-' + k).checked;
+  if ($('L-points').checked && currentScan && pointsFor !== currentScan) {
+    loadPoints(currentScan, loadToken).catch(() => toast('The point cloud could not be loaded.', true));
+  }
   const show = $('L-labels').checked && $('L-objects').checked;
   layers.objects.traverse((o) => { if (o.userData.isTag) o.element.style.display = show ? '' : 'none'; });
 }

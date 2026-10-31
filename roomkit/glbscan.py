@@ -1,10 +1,10 @@
 """Import a finished textured room mesh (a Polycam .glb export) as a scan.
 
-The mesh itself is shown in the viewer as-is. Points are sampled from its surface so the walls and
-floor can be found, and the mesh is shifted so the floor sits at y=0."""
+Points are sampled from its surface so the walls and floor can be found. The mesh is then shifted so
+the floor sits at y=0 and snapped onto the floor, ceiling and wall planes (like the video pipeline's
+mesh), and rewritten as a plain textured triangle-mesh .glb for the viewer."""
 
 import json
-import shutil
 import struct
 import time
 from pathlib import Path
@@ -12,8 +12,9 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from .config import Progress
+from .config import GLB_SNAP_TOL, Progress
 from .export import write_outputs
+from .mesh import snap_to_planes
 from .walls import ceiling_height, detect_walls
 
 N_POINTS = 400_000
@@ -122,6 +123,82 @@ def _floor(y: np.ndarray) -> float:
     return float((edges[i] + edges[i + 1]) / 2)
 
 
+def _vertex_normals(V: np.ndarray, I: np.ndarray) -> np.ndarray:
+    fn = np.cross(V[I[:, 1]] - V[I[:, 0]], V[I[:, 2]] - V[I[:, 0]])     # area-weighted face normals
+    N = np.zeros_like(V)
+    for k in range(3):
+        np.add.at(N, I[:, k], fn)
+    return N / np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-12)
+
+
+def _write_glb(path: Path, j: dict, bin_: bytes, prims: list) -> None:
+    """Write world-space triangle primitives (V, I, uv, material) as a new .glb, keeping the
+    source materials' base colour textures."""
+    blob, views, acc = bytearray(), [], []
+
+    def view(data: bytes, target=None) -> int:
+        blob.extend(b"\0" * (-len(blob) % 4))
+        views.append({"buffer": 0, "byteOffset": len(blob), "byteLength": len(data),
+                      **({"target": target} if target else {})})
+        blob.extend(data)
+        return len(views) - 1
+
+    def accessor(a: np.ndarray, ctype: int, kind: str, target: int, minmax=False) -> int:
+        acc.append({"bufferView": view(a.tobytes(), target), "componentType": ctype,
+                    "count": len(a), "type": kind,
+                    **({"min": a.min(0).tolist(), "max": a.max(0).tolist()} if minmax else {})})
+        return len(acc) - 1
+
+    images, textures, mat_map, materials = [], [], {}, []
+    for _, _, _, m in prims:
+        if m is None or m in mat_map:
+            continue
+        pbr = j["materials"][m].get("pbrMetallicRoughness", {})
+        new = {"pbrMetallicRoughness": {"baseColorFactor": pbr.get("baseColorFactor", [1, 1, 1, 1]),
+                                        "metallicFactor": 0, "roughnessFactor": 1}, "doubleSided": True}
+        t = pbr.get("baseColorTexture")
+        if t is not None:
+            img = j["images"][j["textures"][t["index"]]["source"]]
+            bv = j["bufferViews"][img["bufferView"]]
+            off = bv.get("byteOffset", 0)
+            images.append({"bufferView": view(bin_[off:off + bv["byteLength"]]),
+                           "mimeType": img.get("mimeType", "image/jpeg")})
+            textures.append({"source": len(images) - 1, "sampler": 0})
+            new["pbrMetallicRoughness"]["baseColorTexture"] = {"index": len(textures) - 1}
+        mat_map[m] = len(materials)
+        materials.append(new)
+
+    meshes = []
+    for V, I, uv, m in prims:
+        # no NORMAL: the viewer draws it unlit, and normals would add a third to the download
+        attrs = {"POSITION": accessor(V.astype(np.float32), 5126, "VEC3", 34962, True)}
+        if uv is not None:
+            attrs["TEXCOORD_0"] = accessor(uv.astype(np.float32), 5126, "VEC2", 34962)
+        small = len(V) < 65536                      # 16-bit indices when they fit: half the size
+        idx = I.astype(np.uint16 if small else np.uint32).ravel()
+        p = {"attributes": attrs, "indices": accessor(idx, 5123 if small else 5125, "SCALAR", 34963),
+             "mode": 4}
+        if m in mat_map:
+            p["material"] = mat_map[m]
+        meshes.append({"primitives": [p]})
+
+    blob.extend(b"\0" * (-len(blob) % 4))
+    gltf = {"asset": {"version": "2.0", "generator": "roomkit glbscan"},
+            "scene": 0, "scenes": [{"nodes": list(range(len(meshes)))}],
+            "nodes": [{"mesh": i} for i in range(len(meshes))], "meshes": meshes,
+            "accessors": acc, "bufferViews": views, "buffers": [{"byteLength": len(blob)}],
+            **({"materials": materials} if materials else {}),
+            **({"images": images, "textures": textures,
+                "samplers": [{"magFilter": 9729, "minFilter": 9987, "wrapS": 10497, "wrapT": 10497}]}
+               if images else {})}
+    js = json.dumps(gltf, separators=(",", ":")).encode()
+    js += b" " * (-len(js) % 4)
+    with open(path, "wb") as fh:
+        fh.write(struct.pack("<III", 0x46546C67, 2, 12 + 8 + len(js) + 8 + len(blob)))
+        fh.write(struct.pack("<II", len(js), 0x4E4F534A) + js)
+        fh.write(struct.pack("<II", len(blob), 0x004E4942) + bytes(blob))
+
+
 def import_glb(glb: Path, out: Path, progress: Progress | None = None, name: str | None = None) -> dict:
     progress = progress or (lambda stage, frac: None)
     glb, out = Path(glb), Path(out)
@@ -166,11 +243,22 @@ def import_glb(glb: Path, out: Path, progress: Progress | None = None, name: str
     walls, yaw = detect_walls(P[keep], ceil)
     progress("walls", 1)
 
-    shutil.copyfile(glb, out / "model.glb")
+    # Snap the mesh itself onto the floor / ceiling / wall planes, then write it out in floor-at-0 space.
+    progress("mesh", 0)
+    snapped, moved, total_v = [], 0, 0
+    for V, I, uv, mat in prims:
+        V = V.copy()
+        V[:, 1] -= floor_y
+        moved += snap_to_planes(V, _vertex_normals(V, I), walls, ceil, GLB_SNAP_TOL)
+        total_v += len(V)
+        snapped.append((V, I, uv, mat))
+    _write_glb(out / "model.glb", j, bin_, snapped)
+    progress("mesh", 1)
+
     scene = write_outputs(out, P.astype(np.float32), C, walls, ceil, [], [], yaw)
-    scene["model"] = {"file": "model.glb", "offset_y": -floor_y}
+    scene["model"] = {"file": "model.glb", "offset_y": 0.0}
     scene["mesh"] = None
-    scene["stats"] = {"source": "glb", "points": int(len(P))}
+    scene["stats"] = {"source": "glb", "points": int(len(P)), "vertices": total_v, "snapped": moved}
     (out / "scene.json").write_text(json.dumps(scene, indent=1))
     (out / "status.json").write_text(json.dumps({
         "id": out.name, "name": name or glb.stem, "status": "done", "stage": "done", "frac": 1,

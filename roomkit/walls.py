@@ -95,3 +95,42 @@ def detect_walls(P: np.ndarray, ceiling: float) -> tuple[list[dict], float]:
                               "x2": float(p2[0]), "z2": float(p2[1]), "height": float(ceiling)})
         remaining = remaining[~inl]
     return walls, yaw
+
+
+def find_openings(P: np.ndarray, walls: list[dict], ceiling: float, near: float = 0.1, step: float = 0.05,
+                  body=(0.15, 1.8), header=(1.95, 2.6), min_width: float = 0.4, occupied: int = 3) -> None:
+    """Mark doorways on each wall in place as w["openings"] = [[t0, t1], ...] (metres along the wall
+    from (x1, z1)). A doorway is a stretch with no surface at body height but solid wall above it
+    (the door header). A hole that is empty all the way up is a gap in the scan, not a door, so it
+    stays solid."""
+    hdr = (header[0], min(header[1], ceiling - 0.05))
+    for w in walls:
+        a = np.array([w["x1"], w["z1"]])
+        v = np.array([w["x2"], w["z2"]]) - a
+        length = float(np.linalg.norm(v))
+        w["openings"] = []
+        if length < min_width or hdr[1] <= hdr[0]:
+            continue
+        v /= length
+        rel = P[:, [0, 2]] - a
+        d, t = rel @ np.array([-v[1], v[0]]), rel @ v
+        on = (np.abs(d) < near) & (t >= 0) & (t < length)
+        nb = int(np.ceil(length / step))
+
+        def hist(lo, hi):
+            m = on & (P[:, 1] > lo) & (P[:, 1] < hi)
+            return np.bincount(np.minimum((t[m] / step).astype(int), nb - 1), minlength=nb) >= occupied
+
+        solid, above = hist(*body), hist(*hdr)
+        i = 0
+        while i < nb:
+            if solid[i]:
+                i += 1
+                continue
+            j = i
+            while j < nb and not solid[j]:
+                j += 1
+            # the door has wall on both sides (not the open end of a segment) and a header over most of it
+            if (j - i) * step >= min_width and i > 0 and j < nb and above[i:j].mean() > 0.6:
+                w["openings"].append([round(i * step, 3), round(min(j * step, length), 3)])
+            i = j
